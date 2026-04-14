@@ -1,154 +1,213 @@
+
 'use client';
 import { useState } from 'react';
 
-const processTypes = ['에칭(Etching)', '증착(Deposition)', '노광(Lithography)', '이온주입(Implantation)', 'CMP'];
-const defectTypes = ['파티클(Particle)', '패턴 불량', '스크래치', '두께 편차', '보이드(Void)'];
+const DATA_SET = [
+    { id: 'T-553', name: '반도체수율 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-157', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-646', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-608', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
+];
 
 export default function SemiConAI() {
-    const [process, setProcess] = useState(0);
-    const [defect, setDefect] = useState(0);
-    const [waferSize, setWaferSize] = useState(300);
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | {
-        yieldRate: number;
-        defectDensity: number;
-        recommendations: { parameter: string; adjustment: string; impact: string }[];
-        riskLevel: string;
-    }>(null);
 
-    const simulate = () => {
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
+    };
+
+    const runSim = (item: any) => {
         setLoading(true);
+        setSelected(null);
         setTimeout(() => {
-            const baseYield = 98 - (process * 1.5) - (defect * 2.2);
-            const varYield = Math.random() * 3;
-            const yieldRate = Math.max(0, Math.min(100, baseYield + varYield));
-
-            setResult({
-                yieldRate,
-                defectDensity: (100 - yieldRate) * 0.15,
-                recommendations: [
-                    { parameter: '챔버 온도(Chamber Temp)', adjustment: `현재 온도에서 ${process === 0 ? '+2°C' : '-1.5°C'} 조정`, impact: '수율 1.2% 향상 예상' },
-                    { parameter: '가스 유량(Gas Flow)', adjustment: `${process === 1 ? '증착 가스 5sccm 증가' : '반응 가스 최소화'}`, impact: '균일도 3% 개선' },
-                    { parameter: 'RF 전력(RF Power)', adjustment: '플라즈마 안정화를 위해 10W 하향', impact: '파티클 발생률 20% 감소' }
-                ],
-                riskLevel: yieldRate > 95 ? '안정적(Stable)' : yieldRate > 90 ? '주의(Warning)' : '위험(Critical)'
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
             });
             setLoading(false);
-        }, 1800);
+        }, 1600);
     };
 
     return (
         <div className="sim-ui">
-            <h3 className="panel-title">💻 반도체 공정 및 수율 시뮬레이션</h3>
-
-            <div className="form-section">
-                <span className="fl">대상 공정 (Process)</span>
-                <div className="pill-row">
-                    {processTypes.map((p, i) => (
-                        <button key={i} className={`pill ${process === i ? 'active' : ''}`} onClick={() => { setProcess(i); setResult(null); }}>
-                            {p}
-                        </button>
-                    ))}
-                </div>
+            <div className="panel-header">
+                <h3>💻 반도체수율 AI 허브</h3>
+                <p>웨이퍼 단층 촬영 데이터를 기반으로 공정 결함을 예측하고 식각/증착 최적 온도를 제안합니다.</p>
             </div>
 
-            <div className="form-section">
-                <span className="fl">주요 결함 유형 예측 (Defect)</span>
-                <div className="pill-row">
-                    {defectTypes.map((d, i) => (
-                        <button key={i} className={`pill ${defect === i ? 'active' : ''}`} onClick={() => { setDefect(i); setResult(null); }}>
-                            {d}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="sg">
-                <div className="sh">
-                    <span>웨이퍼 크기 (Wafer Size)</span>
-                    <span className="sv">{waferSize} mm</span>
-                </div>
-                <input
-                    type="range"
-                    className="slider"
-                    min="200"
-                    max="450"
-                    step="50"
-                    value={waferSize}
-                    onChange={(e) => { setWaferSize(parseInt(e.target.value)); setResult(null); }}
-                />
-            </div>
-
-            <button className="btn btn-primary run-btn" onClick={simulate} disabled={loading}>
-                {loading ? 'AI 분석 중...' : '💻 수율 분석 및 공정 최적화 실행'}
-            </button>
-
-            {loading && (
-                <div className="ld">
-                    <div className="loader" />
-                    <p>웨이퍼 단층 데이터를 스캔하고 결함을 예측 중입니다...</p>
-                </div>
-            )}
-
-            {result && !loading && (
-                <div className="results">
-                    <div className="wafer-display">
-                        <div className="wafer-circle">
-                            <div className="wafer-highlight" style={{ transform: `scale(${result.yieldRate / 100})` }}></div>
-                        </div>
-                        <div className="yield-stat">
-                            <span className="yield-val" style={{ color: result.yieldRate > 95 ? 'var(--accent-blue)' : result.yieldRate > 90 ? 'var(--accent-amber)' : 'var(--accent-rose)' }}>
-                                {result.yieldRate.toFixed(2)}%
-                            </span>
-                            <span className="yield-label">예상 수율 (Expected Yield)</span>
-                        </div>
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
                     </div>
-
-                    <div className="sb">
-                        <h4>⚙️ 공정 최적화 제안</h4>
-                        {result.recommendations.map((r, i) => (
-                            <div key={i} className="rec-item">
-                                <div className="rec-head">
-                                    <span className="rec-param">{r.parameter}</span>
-                                    <span className="rec-impact">💡 {r.impact}</span>
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 반도체수율 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
                                 </div>
-                                <span className="rec-adj">{r.adjustment}</span>
-                            </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
                         ))}
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
                     </div>
                 </div>
-            )}
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">💻</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 반도체수율 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <style jsx>{`
-                .sim-ui { display: flex; flex-direction: column; gap: var(--space-lg); }
-                .panel-title { font-size: 16px; font-weight: 700; color: var(--accent-blue); }
-                .form-section { margin-bottom: var(--space-sm); }
-                .fl { font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px; }
-                .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
-                .pill { padding: 6px 12px; font-size: 11px; border-radius: var(--radius-full); background: var(--bg-glass); border: 1px solid var(--border-subtle); color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); }
-                .pill:hover { border-color: var(--border-medium); }
-                .pill.active { background: rgba(68, 138, 255, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); font-weight: 600; }
-                .sg { margin: var(--space-sm) 0; }
-                .sh { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
-                .sv { font-weight: 600; font-size: 12px; color: var(--accent-blue); }
-                .slider { width: 100%; height: 6px; -webkit-appearance: none; background: var(--bg-glass-strong); border-radius: 3px; outline: none; }
-                .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-blue); cursor: pointer; }
-                .run-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, rgba(68, 138, 255, 0.2), transparent); border-color: var(--accent-blue); color: var(--accent-blue); }
-                .ld { text-align: center; padding: var(--space-2xl); }
-                .loader { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--space-md); }
-                .results { animation: fadeInUp 0.5s ease-out; }
-                .wafer-display { display: flex; align-items: center; gap: var(--space-xl); background: var(--bg-glass); padding: var(--space-xl); border-radius: var(--radius-md); margin-bottom: var(--space-xl); }
-                .wafer-circle { width: 80px; height: 80px; border-radius: 50%; background: var(--bg-glass-strong); position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
-                .wafer-highlight { width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), transparent); opacity: 0.5; transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1); }
-                .yield-stat { display: flex; flex-direction: column; gap: 4px; }
-                .yield-val { font-size: 32px; font-weight: 800; font-family: var(--font-mono); }
-                .yield-label { font-size: 12px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; }
-                .sb h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
-                .rec-item { padding: 12px var(--space-md); background: var(--bg-glass); border-radius: var(--radius-sm); margin-bottom: 8px; border-left: 3px solid var(--accent-blue); }
-                .rec-head { display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; }
-                .rec-param { font-weight: 700; font-size: 13px; color: var(--text-primary); }
-                .rec-impact { font-size: 11px; font-weight: 600; color: var(--accent-emerald); background: rgba(0, 230, 118, 0.1); padding: 2px 8px; border-radius: 12px; }
-                .rec-adj { font-size: 12px; color: var(--text-secondary); }
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
+
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
+
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
+
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
             `}</style>
         </div>
     );

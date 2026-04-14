@@ -1,181 +1,214 @@
-'use client';
 
+'use client';
 import { useState } from 'react';
 
-export default function EconoCastAI() {
-    const [params, setParams] = useState({ interestRate: 3.5, inflation: 2.5, unemployment: 4.0, oilPrice: 75 });
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | {
-        gdpForecast: number[];
-        cpiTrend: number[];
-        employment: number[];
-        quarters: string[];
-        summary: string;
-        riskLevel: string;
-    }>(null);
+const DATA_SET = [
+    { id: 'T-429', name: '이코노캐스트 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-647', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-930', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-495', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
+];
 
-    const simulate = () => {
-        setLoading(true);
-        setTimeout(() => {
-            const base = 2.0 - params.interestRate * 0.15 + params.inflation * 0.1;
-            setResult({
-                gdpForecast: Array.from({ length: 8 }, (_, i) => base + Math.sin(i * 0.5) * 0.5 + Math.random() * 0.3),
-                cpiTrend: Array.from({ length: 8 }, (_, i) => params.inflation + Math.cos(i * 0.4) * 0.3 + Math.random() * 0.2),
-                employment: Array.from({ length: 8 }, (_, i) => 100 - params.unemployment + i * 0.2 + Math.random() * 0.5),
-                quarters: ['Q1 2026', 'Q2 2026', 'Q3 2026', 'Q4 2026', 'Q1 2027', 'Q2 2027', 'Q3 2027', 'Q4 2027'],
-                summary: params.interestRate > 4 ? '고금리 환경에서 성장 둔화가 예상됩니다. 소비자 지출 감소와 기업 투자 위축에 주의가 필요합니다.' : '완화적 통화정책 기조 아래 안정적 성장이 예상됩니다. 다만 인플레이션 리스크 모니터링이 필요합니다.',
-                riskLevel: params.interestRate > 4.5 ? '높음' : params.interestRate > 3 ? '보통' : '낮음',
-            });
-            setLoading(false);
-        }, 2200);
+export default function EconoCastAI() {
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
     };
 
-    const maxGdp = result ? Math.max(...result.gdpForecast) : 0;
-    const minGdp = result ? Math.min(...result.gdpForecast) : 0;
+    const runSim = (item: any) => {
+        setLoading(true);
+        setSelected(null);
+        setTimeout(() => {
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
+            });
+            setLoading(false);
+        }, 1600);
+    };
 
     return (
-        <div className="econ-sim">
-            <div className="econ-controls">
-                <h3 className="panel-title">경제 변수 설정</h3>
-                {[
-                    { key: 'interestRate', label: '기준금리 (%)', min: 0, max: 8, step: 0.25, color: 'var(--accent-cyan)' },
-                    { key: 'inflation', label: '인플레이션 (%)', min: 0, max: 10, step: 0.5, color: 'var(--accent-rose)' },
-                    { key: 'unemployment', label: '실업률 (%)', min: 1, max: 15, step: 0.5, color: 'var(--accent-amber)' },
-                    { key: 'oilPrice', label: '유가 ($/배럴)', min: 30, max: 150, step: 5, color: 'var(--accent-emerald)' },
-                ].map(s => (
-                    <div key={s.key} className="slider-group">
-                        <div className="slider-header">
-                            <span className="slider-label">{s.label}</span>
-                            <span className="slider-value" style={{ color: s.color }}>
-                                {params[s.key as keyof typeof params]}
-                            </span>
-                        </div>
-                        <input type="range" min={s.min} max={s.max} step={s.step}
-                            value={params[s.key as keyof typeof params]}
-                            onChange={e => { setParams({ ...params, [s.key]: parseFloat(e.target.value) }); setResult(null); }}
-                            className="slider" style={{ '--fill': s.color } as React.CSSProperties}
-                        />
-                    </div>
-                ))}
-                <button className="btn btn-primary run-btn" onClick={simulate} disabled={loading}>
-                    {loading ? '분석 중...' : '📈 경제 예측 실행'}
-                </button>
+        <div className="sim-ui">
+            <div className="panel-header">
+                <h3>📈 이코노캐스트 AI 허브</h3>
+                <p>글로벌 경제 변수를 입력하여 거시경제 트렌드를 인터랙티브 차트로 예측합니다.</p>
             </div>
 
-            {loading && (
-                <div className="loading-state">
-                    <div className="loader" />
-                    <p>거시경제 모델을 시뮬레이션 중입니다...</p>
-                </div>
-            )}
-
-            {result && !loading && (
-                <div className="econ-results">
-                    <div className="econ-summary-card">
-                        <div className="econ-summary-header">
-                            <h3>📊 예측 요약</h3>
-                            <span className={`risk-badge ${result.riskLevel === '높음' ? 'high' : result.riskLevel === '보통' ? 'med' : 'low'}`}>
-                                리스크: {result.riskLevel}
-                            </span>
-                        </div>
-                        <p>{result.summary}</p>
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
                     </div>
-
-                    {/* GDP Chart */}
-                    <div className="chart-section">
-                        <h4>GDP 성장률 전망 (%)</h4>
-                        <div className="bar-chart">
-                            {result.gdpForecast.map((v, i) => (
-                                <div key={i} className="bar-col">
-                                    <div className="bar-wrapper">
-                                        <div
-                                            className="bar"
-                                            style={{
-                                                height: `${((v - minGdp + 0.5) / (maxGdp - minGdp + 1)) * 100}%`,
-                                                background: v > 0 ? 'var(--accent-cyan)' : 'var(--accent-rose)',
-                                                animationDelay: `${i * 100}ms`,
-                                            }}
-                                        />
-                                    </div>
-                                    <span className="bar-label">{result.quarters[i]}</span>
-                                    <span className="bar-value">{v.toFixed(2)}%</span>
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 이코노캐스트 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* CPI Trend */}
-                    <div className="chart-section">
-                        <h4>소비자물가지수(CPI) 추이</h4>
-                        <div className="line-chart">
-                            <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="line-svg">
-                                <polyline
-                                    fill="none"
-                                    stroke="var(--accent-rose)"
-                                    strokeWidth="2"
-                                    points={result.cpiTrend.map((v, i) => `${(i / 7) * 380 + 10},${110 - (v / 5) * 90}`).join(' ')}
-                                />
-                                <polyline
-                                    fill="rgba(255,82,82,0.1)"
-                                    stroke="none"
-                                    points={`10,110 ${result.cpiTrend.map((v, i) => `${(i / 7) * 380 + 10},${110 - (v / 5) * 90}`).join(' ')} 390,110`}
-                                />
-                                {result.cpiTrend.map((v, i) => (
-                                    <circle key={i} cx={(i / 7) * 380 + 10} cy={110 - (v / 5) * 90} r="3" fill="var(--accent-rose)" />
-                                ))}
-                            </svg>
-                        </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
+                        ))}
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
                     </div>
                 </div>
-            )}
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">📈</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 이코노캐스트 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <style jsx>{`
-        .econ-sim { display: flex; flex-direction: column; gap: var(--space-xl); }
-        .panel-title { font-size: 16px; font-weight: 700; margin-bottom: var(--space-lg); }
-        .slider-group { margin-bottom: var(--space-md); }
-        .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .slider-label { font-size: 13px; font-weight: 500; }
-        .slider-value { font-size: 13px; font-weight: 700; font-family: var(--font-mono); }
-        .slider { width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: var(--bg-glass-strong); border-radius: 3px; outline: none; }
-        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--fill, var(--accent-cyan)); cursor: pointer; }
-        .run-btn { width: 100%; margin-top: var(--space-md); padding: 14px; }
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
 
-        .loading-state { text-align: center; padding: var(--space-2xl); }
-        .loader { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--accent-amber); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--space-md); }
-        .loading-state p { color: var(--text-secondary); font-size: 14px; }
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
-        .econ-results { animation: fadeInUp 0.5s ease-out; }
-        .econ-summary-card {
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          padding: var(--space-xl);
-          margin-bottom: var(--space-xl);
-        }
-        .econ-summary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); }
-        .econ-summary-header h3 { font-size: 18px; font-weight: 700; }
-        .econ-summary-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
-        .risk-badge { padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 700; }
-        .risk-badge.high { background: var(--accent-rose-dim); color: var(--accent-rose); }
-        .risk-badge.med { background: var(--accent-amber-dim); color: var(--accent-amber); }
-        .risk-badge.low { background: var(--accent-emerald-dim); color: var(--accent-emerald); }
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
 
-        .chart-section { margin-bottom: var(--space-xl); }
-        .chart-section h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
 
-        .bar-chart { display: flex; gap: var(--space-sm); align-items: flex-end; height: 180px; padding: var(--space-md); background: var(--bg-glass); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
-        .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
-        .bar-wrapper { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
-        .bar { width: 70%; max-width: 40px; border-radius: 4px 4px 0 0; animation: fadeInUp 0.5s ease-out both; min-height: 4px; }
-        .bar-label { font-size: 9px; color: var(--text-tertiary); margin-top: 6px; white-space: nowrap; }
-        .bar-value { font-size: 10px; font-weight: 600; font-family: var(--font-mono); color: var(--accent-cyan); }
-
-        .line-chart {
-          background: var(--bg-glass); border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md); padding: var(--space-md); height: 160px;
-        }
-        .line-svg { width: 100%; height: 100%; }
-      `}</style>
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }

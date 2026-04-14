@@ -1,229 +1,214 @@
-'use client';
 
+'use client';
 import { useState } from 'react';
 
-interface Node {
-    id: string;
-    label: string;
-    type: string;
-    x: number;
-    y: number;
-    cost: number;
-    efficiency: number;
-}
-
-interface Edge {
-    from: string;
-    to: string;
-    flow: number;
-}
-
-const defaultNodes: Node[] = [
-    { id: 'raw', label: '원자재 조달', type: 'source', x: 50, y: 50, cost: 100, efficiency: 85 },
-    { id: 'factory1', label: '제조 공장 A', type: 'process', x: 200, y: 30, cost: 250, efficiency: 78 },
-    { id: 'factory2', label: '제조 공장 B', type: 'process', x: 200, y: 80, cost: 180, efficiency: 82 },
-    { id: 'warehouse', label: '물류 센터', type: 'storage', x: 350, y: 50, cost: 80, efficiency: 90 },
-    { id: 'retail', label: '유통/판매', type: 'output', x: 500, y: 50, cost: 60, efficiency: 95 },
-];
-
-const defaultEdges: Edge[] = [
-    { from: 'raw', to: 'factory1', flow: 60 },
-    { from: 'raw', to: 'factory2', flow: 40 },
-    { from: 'factory1', to: 'warehouse', flow: 55 },
-    { from: 'factory2', to: 'warehouse', flow: 38 },
-    { from: 'warehouse', to: 'retail', flow: 88 },
+const DATA_SET = [
+    { id: 'T-534', name: '옵티팩토리 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-292', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-306', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-259', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
 ];
 
 export default function OptiFactoryAI() {
-    const [nodes] = useState(defaultNodes);
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [optimized, setOptimized] = useState(false);
-    const [result, setResult] = useState<null | {
-        totalCostBefore: number;
-        totalCostAfter: number;
-        efficiencyBefore: number;
-        efficiencyAfter: number;
-        throughput: number;
-        bottleneck: string;
-        suggestions: string[];
-    }>(null);
 
-    const optimize = () => {
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
+    };
+
+    const runSim = (item: any) => {
         setLoading(true);
+        setSelected(null);
         setTimeout(() => {
-            setResult({
-                totalCostBefore: 670,
-                totalCostAfter: 520,
-                efficiencyBefore: 78,
-                efficiencyAfter: 93,
-                throughput: 94.5,
-                bottleneck: '제조 공장 A',
-                suggestions: [
-                    '공장 A의 라인 2를 공장 B로 이전하면 병목 해소 가능',
-                    '원자재 조달 경로를 이중화하여 리스크 분산 권장',
-                    '물류 센터 자동화 투자 시 ROI 18개월 내 달성 예상',
-                    '공장 A-B 간 부품 공유 전략 도입 추천',
-                ],
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
             });
-            setOptimized(true);
             setLoading(false);
-        }, 2000);
+        }, 1600);
     };
 
     return (
-        <div className="opti-sim">
-            <h3 className="panel-title">공급망 네트워크</h3>
-
-            {/* Node-based visualization */}
-            <div className="network-view">
-                <svg viewBox="0 0 560 120" className="network-svg">
-                    {defaultEdges.map((e, i) => {
-                        const from = defaultNodes.find(n => n.id === e.from)!;
-                        const to = defaultNodes.find(n => n.id === e.to)!;
-                        return (
-                            <g key={i}>
-                                <line
-                                    x1={from.x + 40} y1={from.y}
-                                    x2={to.x - 10} y2={to.y}
-                                    stroke={optimized ? 'var(--accent-emerald)' : 'var(--border-medium)'}
-                                    strokeWidth="2"
-                                    strokeDasharray={optimized ? '0' : '4'}
-                                />
-                                <text
-                                    x={(from.x + 40 + to.x - 10) / 2}
-                                    y={(from.y + to.y) / 2 - 6}
-                                    fill="var(--text-tertiary)"
-                                    fontSize="9" textAnchor="middle"
-                                >
-                                    {e.flow}%
-                                </text>
-                            </g>
-                        );
-                    })}
-                    {nodes.map(node => (
-                        <g key={node.id}>
-                            <rect
-                                x={node.x - 10} y={node.y - 16}
-                                width="80" height="32" rx="8"
-                                fill={node.type === 'source' ? 'var(--accent-cyan-dim)' :
-                                    node.type === 'output' ? 'var(--accent-emerald-dim)' :
-                                        node.type === 'storage' ? 'var(--accent-amber-dim)' : 'var(--accent-purple-dim)'}
-                                stroke={node.type === 'source' ? 'var(--accent-cyan)' :
-                                    node.type === 'output' ? 'var(--accent-emerald)' :
-                                        node.type === 'storage' ? 'var(--accent-amber)' : 'var(--accent-purple)'}
-                                strokeWidth="1"
-                            />
-                            <text x={node.x + 30} y={node.y + 4} fill="var(--text-primary)" fontSize="9" textAnchor="middle" fontWeight="600">
-                                {node.label}
-                            </text>
-                        </g>
-                    ))}
-                </svg>
+        <div className="sim-ui">
+            <div className="panel-header">
+                <h3>🏭 옵티팩토리 AI 허브</h3>
+                <p>노드 기반 UI로 제조 공급망을 최적화하고 비용 절감 전략을 시뮬레이션합니다.</p>
             </div>
 
-            {/* Node Details */}
-            <div className="node-grid">
-                {nodes.map(node => (
-                    <div key={node.id} className="node-card">
-                        <span className="node-type">{node.type === 'source' ? '📦' : node.type === 'process' ? '🏭' : node.type === 'storage' ? '🏗️' : '🛒'}</span>
-                        <span className="node-label">{node.label}</span>
-                        <div className="node-stats">
-                            <span>비용: ₩{node.cost}M</span>
-                            <span>효율: {node.efficiency}%</span>
-                        </div>
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
                     </div>
-                ))}
-            </div>
-
-            <button className="btn btn-primary run-btn" onClick={optimize} disabled={loading}>
-                {loading ? '최적화 중...' : '🏭 공급망 최적화 실행'}
-            </button>
-
-            {loading && (
-                <div className="loading-state">
-                    <div className="loader" />
-                    <p>AI가 공급망 최적화 전략을 분석 중입니다...</p>
-                </div>
-            )}
-
-            {result && !loading && (
-                <div className="opti-results">
-                    <h3>📊 최적화 결과</h3>
-                    <div className="opti-stats">
-                        <div className="opti-stat-card">
-                            <span className="os-label">총 비용</span>
-                            <div className="os-compare">
-                                <span className="os-before">₩{result.totalCostBefore}M</span>
-                                <span>→</span>
-                                <span className="os-after">₩{result.totalCostAfter}M</span>
-                            </div>
-                            <span className="os-savings">-{((1 - result.totalCostAfter / result.totalCostBefore) * 100).toFixed(1)}% 절감</span>
-                        </div>
-                        <div className="opti-stat-card">
-                            <span className="os-label">전체 효율</span>
-                            <div className="os-compare">
-                                <span className="os-before">{result.efficiencyBefore}%</span>
-                                <span>→</span>
-                                <span className="os-after">{result.efficiencyAfter}%</span>
-                            </div>
-                            <span className="os-savings">+{result.efficiencyAfter - result.efficiencyBefore}% 향상</span>
-                        </div>
-                        <div className="opti-stat-card">
-                            <span className="os-label">처리량</span>
-                            <span className="os-big">{result.throughput}%</span>
-                        </div>
-                        <div className="opti-stat-card">
-                            <span className="os-label">병목 지점</span>
-                            <span className="os-bottleneck">{result.bottleneck}</span>
-                        </div>
-                    </div>
-
-                    <div className="suggestions">
-                        <h4>💡 개선 제안</h4>
-                        {result.suggestions.map((s, i) => (
-                            <div key={i} className="suggestion-item">
-                                <span className="sug-num">{i + 1}</span>
-                                <span>{s}</span>
-                            </div>
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 옵티팩토리 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
+                                </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
                         ))}
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
                     </div>
                 </div>
-            )}
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">🏭</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 옵티팩토리 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <style jsx>{`
-        .opti-sim { display: flex; flex-direction: column; gap: var(--space-xl); }
-        .panel-title { font-size: 16px; font-weight: 700; }
-        .network-view { background: var(--bg-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-lg); overflow-x: auto; }
-        .network-svg { width: 100%; min-width: 500px; height: auto; }
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
 
-        .node-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-sm); }
-        .node-card { background: var(--bg-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: var(--space-md); text-align: center; }
-        .node-type { font-size: 20px; display: block; margin-bottom: 4px; }
-        .node-label { font-size: 12px; font-weight: 600; display: block; margin-bottom: 6px; }
-        .node-stats { font-size: 10px; color: var(--text-tertiary); display: flex; flex-direction: column; gap: 2px; }
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
-        .run-btn { width: 100%; padding: 14px; }
-        .loading-state { text-align: center; padding: var(--space-2xl); }
-        .loader { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--accent-amber); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--space-md); }
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
 
-        .opti-results { animation: fadeInUp 0.5s ease-out; }
-        .opti-results h3 { font-size: 18px; font-weight: 700; margin-bottom: var(--space-lg); }
-        .opti-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
-        .opti-stat-card { background: var(--bg-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-md); text-align: center; }
-        .os-label { display: block; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .os-compare { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; margin-bottom: 4px; }
-        .os-before { color: var(--accent-rose); font-weight: 600; }
-        .os-after { color: var(--accent-emerald); font-weight: 700; }
-        .os-savings { font-size: 12px; font-weight: 700; color: var(--accent-emerald); }
-        .os-big { font-size: 24px; font-weight: 800; color: var(--accent-cyan); }
-        .os-bottleneck { font-size: 14px; font-weight: 600; color: var(--accent-amber); }
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
 
-        .suggestions h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
-        .suggestion-item { display: flex; align-items: flex-start; gap: var(--space-sm); padding: 10px var(--space-md); background: var(--bg-glass); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-        .sug-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-cyan-dim); color: var(--accent-cyan); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
-
-        @media (max-width: 640px) { .opti-stats { grid-template-columns: repeat(2, 1fr); } }
-      `}</style>
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }

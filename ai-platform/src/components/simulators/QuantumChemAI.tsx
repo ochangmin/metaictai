@@ -1,302 +1,214 @@
+
 'use client';
+import { useState } from 'react';
 
-import { useState, useRef, useEffect } from 'react';
-
-interface Atom {
-    symbol: string;
-    color: string;
-    x: number;
-    y: number;
-    z: number;
-    radius: number;
-}
-
-interface Bond {
-    from: number;
-    to: number;
-}
-
-const molecules: Record<string, { name: string; atoms: Atom[]; bonds: Bond[] }> = {
-    water: {
-        name: 'H₂O (물)',
-        atoms: [
-            { symbol: 'O', color: '#ff5252', x: 150, y: 130, z: 0, radius: 22 },
-            { symbol: 'H', color: '#ffffff', x: 100, y: 180, z: 10, radius: 14 },
-            { symbol: 'H', color: '#ffffff', x: 200, y: 180, z: -10, radius: 14 },
-        ],
-        bonds: [{ from: 0, to: 1 }, { from: 0, to: 2 }],
-    },
-    caffeine: {
-        name: 'C₈H₁₀N₄O₂ (카페인)',
-        atoms: [
-            { symbol: 'C', color: '#555', x: 120, y: 100, z: 0, radius: 18 },
-            { symbol: 'C', color: '#555', x: 160, y: 70, z: 5, radius: 18 },
-            { symbol: 'N', color: '#448aff', x: 200, y: 100, z: -5, radius: 17 },
-            { symbol: 'C', color: '#555', x: 200, y: 150, z: 0, radius: 18 },
-            { symbol: 'N', color: '#448aff', x: 160, y: 180, z: 5, radius: 17 },
-            { symbol: 'C', color: '#555', x: 120, y: 150, z: -5, radius: 18 },
-            { symbol: 'O', color: '#ff5252', x: 80, y: 80, z: 10, radius: 16 },
-            { symbol: 'O', color: '#ff5252', x: 240, y: 160, z: -10, radius: 16 },
-            { symbol: 'C', color: '#555', x: 250, y: 80, z: 5, radius: 18 },
-            { symbol: 'N', color: '#448aff', x: 280, y: 120, z: 0, radius: 17 },
-        ],
-        bonds: [
-            { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 },
-            { from: 3, to: 4 }, { from: 4, to: 5 }, { from: 5, to: 0 },
-            { from: 0, to: 6 }, { from: 3, to: 7 }, { from: 2, to: 8 },
-            { from: 8, to: 9 },
-        ],
-    },
-    methane: {
-        name: 'CH₄ (메탄)',
-        atoms: [
-            { symbol: 'C', color: '#555', x: 150, y: 140, z: 0, radius: 20 },
-            { symbol: 'H', color: '#ffffff', x: 110, y: 100, z: 15, radius: 13 },
-            { symbol: 'H', color: '#ffffff', x: 190, y: 100, z: -15, radius: 13 },
-            { symbol: 'H', color: '#ffffff', x: 110, y: 180, z: -10, radius: 13 },
-            { symbol: 'H', color: '#ffffff', x: 190, y: 180, z: 10, radius: 13 },
-        ],
-        bonds: [{ from: 0, to: 1 }, { from: 0, to: 2 }, { from: 0, to: 3 }, { from: 0, to: 4 }],
-    },
-};
+const DATA_SET = [
+    { id: 'T-679', name: '퀀텀켐 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-585', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-931', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-490', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
+];
 
 export default function QuantumChemAI() {
-    const [selectedMol, setSelectedMol] = useState<'water' | 'caffeine' | 'methane'>('water');
-    const [rotation, setRotation] = useState(0);
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | {
-        totalEnergy: number;
-        kineticEnergy: number;
-        potentialEnergy: number;
-        dipoleMoment: number;
-        bondLengths: { bond: string; length: number }[];
-        orbitalEnergies: number[];
-    }>(null);
 
-    const mol = molecules[selectedMol];
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setRotation(r => (r + 0.5) % 360);
-        }, 30);
-        return () => clearInterval(interval);
-    }, []);
-
-    const simulate = () => {
-        setLoading(true);
-        setTimeout(() => {
-            const n = mol.atoms.length;
-            setResult({
-                totalEnergy: -(50 + n * 15 + Math.random() * 10),
-                kineticEnergy: 10 + n * 3 + Math.random() * 5,
-                potentialEnergy: -(60 + n * 18 + Math.random() * 8),
-                dipoleMoment: selectedMol === 'water' ? 1.85 + Math.random() * 0.1 : selectedMol === 'caffeine' ? 3.6 + Math.random() * 0.3 : 0 + Math.random() * 0.05,
-                bondLengths: mol.bonds.slice(0, 4).map(b => ({
-                    bond: `${mol.atoms[b.from].symbol}-${mol.atoms[b.to].symbol}`,
-                    length: 0.9 + Math.random() * 0.5,
-                })),
-                orbitalEnergies: Array.from({ length: Math.min(n, 6) }, () => -20 + Math.random() * 35),
-            });
-            setLoading(false);
-        }, 2000);
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
     };
 
-    // Simple rotation transform for pseudo-3D
-    const getRotatedPos = (atom: Atom) => {
-        const rad = (rotation * Math.PI) / 180;
-        const x = atom.x * Math.cos(rad) - atom.z * Math.sin(rad) * 0.5;
-        const z = atom.x * Math.sin(rad) + atom.z * Math.cos(rad);
-        return { x: x + 50, y: atom.y, z, scale: 1 + z * 0.003 };
+    const runSim = (item: any) => {
+        setLoading(true);
+        setSelected(null);
+        setTimeout(() => {
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
+            });
+            setLoading(false);
+        }, 1600);
     };
 
     return (
-        <div className="quantum-sim">
-            <h3 className="panel-title">분자 선택</h3>
-            <div className="mol-select">
-                {(['water', 'caffeine', 'methane'] as const).map(key => (
-                    <button key={key} className={`mol-btn ${selectedMol === key ? 'active' : ''}`}
-                        onClick={() => { setSelectedMol(key); setResult(null); }}>
-                        <span className="mol-emoji">⚛️</span>
-                        <span className="mol-name">{molecules[key].name}</span>
-                    </button>
-                ))}
+        <div className="sim-ui">
+            <div className="panel-header">
+                <h3>⚛️ 퀀텀켐 AI 허브</h3>
+                <p>3D 분자 뷰어로 분자 역학과 에너지 상태를 시뮬레이션합니다.</p>
             </div>
 
-            {/* 3D Viewer */}
-            <div className="mol-viewer">
-                <svg viewBox="0 0 350 300" className="mol-svg">
-                    {/* Bonds */}
-                    {mol.bonds.map((bond, i) => {
-                        const from = getRotatedPos(mol.atoms[bond.from]);
-                        const to = getRotatedPos(mol.atoms[bond.to]);
-                        return (
-                            <line key={i}
-                                x1={from.x} y1={from.y}
-                                x2={to.x} y2={to.y}
-                                stroke="rgba(255,255,255,0.3)"
-                                strokeWidth="3"
-                            />
-                        );
-                    })}
-                    {/* Atoms (sorted by z for depth) */}
-                    {[...mol.atoms].map((atom, i) => {
-                        const pos = getRotatedPos(atom);
-                        return (
-                            <g key={i}>
-                                <circle
-                                    cx={pos.x} cy={pos.y}
-                                    r={atom.radius * pos.scale}
-                                    fill={atom.color}
-                                    opacity={0.6 + pos.scale * 0.3}
-                                    stroke="rgba(255,255,255,0.2)"
-                                    strokeWidth="1"
-                                />
-                                <text x={pos.x} y={pos.y + 4}
-                                    fill="#fff" fontSize="11" textAnchor="middle" fontWeight="700">
-                                    {atom.symbol}
-                                </text>
-                            </g>
-                        );
-                    })}
-                </svg>
-                <div className="viewer-hint">자동 회전 중 — 분자 구조를 관찰하세요</div>
-            </div>
-
-            <button className="btn btn-primary run-btn" onClick={simulate} disabled={loading}>
-                {loading ? '계산 중...' : '⚛️ 양자 시뮬레이션 실행'}
-            </button>
-
-            {loading && (
-                <div className="loading-state">
-                    <div className="loader" />
-                    <p>양자 에너지 상태를 계산 중입니다...</p>
-                </div>
-            )}
-
-            {result && !loading && (
-                <div className="quantum-results">
-                    <div className="q-stats">
-                        {[
-                            { label: '총 에너지', value: `${result.totalEnergy.toFixed(2)} eV`, color: 'var(--accent-cyan)' },
-                            { label: '운동 에너지', value: `${result.kineticEnergy.toFixed(2)} eV`, color: 'var(--accent-amber)' },
-                            { label: '퍼텐셜 에너지', value: `${result.potentialEnergy.toFixed(2)} eV`, color: 'var(--accent-rose)' },
-                            { label: '쌍극자 모멘트', value: `${result.dipoleMoment.toFixed(2)} D`, color: 'var(--accent-purple)' },
-                        ].map(s => (
-                            <div key={s.label} className="q-stat-card">
-                                <span className="qs-label">{s.label}</span>
-                                <span className="qs-value" style={{ color: s.color }}>{s.value}</span>
-                            </div>
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
+                    </div>
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 퀀텀켐 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
+                                </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
                         ))}
-                    </div>
-
-                    {/* Bond Lengths */}
-                    <div className="bonds-section">
-                        <h4>🔗 결합 길이</h4>
-                        <div className="bonds-list">
-                            {result.bondLengths.map((b, i) => (
-                                <div key={i} className="bond-item">
-                                    <span className="bond-name">{b.bond}</span>
-                                    <div className="bond-bar">
-                                        <div className="bond-fill" style={{ width: `${(b.length / 1.5) * 100}%` }} />
-                                    </div>
-                                    <span className="bond-val">{b.length.toFixed(3)} Å</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Orbital Energies */}
-                    <div className="orbital-section">
-                        <h4>🌀 오비탈 에너지 준위</h4>
-                        <div className="orbital-chart">
-                            {result.orbitalEnergies.sort((a, b) => a - b).map((e, i) => (
-                                <div key={i} className="orbital-level">
-                                    <span className="ol-label">E{i + 1}</span>
-                                    <div className="ol-bar-container">
-                                        <div className="ol-bar"
-                                            style={{
-                                                left: `${((e + 20) / 35) * 100}%`,
-                                                background: e < 0 ? 'var(--accent-cyan)' : 'var(--accent-rose)',
-                                            }}
-                                        >
-                                            <span className="ol-electrons">↑↓</span>
-                                        </div>
-                                    </div>
-                                    <span className="ol-value">{e.toFixed(2)} eV</span>
-                                </div>
-                            ))}
-                        </div>
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
                     </div>
                 </div>
-            )}
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">⚛️</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 퀀텀켐 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <style jsx>{`
-        .quantum-sim { display: flex; flex-direction: column; gap: var(--space-xl); }
-        .panel-title { font-size: 16px; font-weight: 700; margin-bottom: var(--space-md); }
-        .mol-select { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); flex-wrap: wrap; }
-        .mol-btn {
-          flex: 1; min-width: 130px;
-          padding: var(--space-md);
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          display: flex; flex-direction: column; align-items: center; gap: 6px;
-          cursor: pointer; transition: all var(--transition-fast);
-          font-family: inherit; color: inherit;
-        }
-        .mol-btn:hover { border-color: var(--border-medium); }
-        .mol-btn.active { border-color: var(--accent-cyan); background: var(--accent-cyan-dim); }
-        .mol-emoji { font-size: 24px; }
-        .mol-name { font-size: 13px; font-weight: 600; }
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
 
-        .mol-viewer {
-          background: radial-gradient(circle at center, rgba(0,229,255,0.03), transparent);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: var(--space-lg);
-        }
-        .mol-svg { max-width: 350px; width: 100%; }
-        .viewer-hint { font-size: 11px; color: var(--text-tertiary); margin-top: var(--space-sm); }
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
-        .run-btn { width: 100%; padding: 14px; }
-        .loading-state { text-align: center; padding: var(--space-2xl); }
-        .loader { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--space-md); }
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
 
-        .quantum-results { animation: fadeInUp 0.5s ease-out; }
-        .q-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
-        .q-stat-card { background: var(--bg-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-md); text-align: center; }
-        .qs-label { display: block; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .qs-value { font-size: 18px; font-weight: 700; }
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
 
-        .bonds-section { margin-bottom: var(--space-xl); }
-        .bonds-section h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
-        .bonds-list { display: flex; flex-direction: column; gap: 8px; }
-        .bond-item { display: flex; align-items: center; gap: var(--space-md); padding: 8px var(--space-md); background: var(--bg-glass); border-radius: var(--radius-sm); }
-        .bond-name { font-size: 13px; font-weight: 600; font-family: var(--font-mono); min-width: 60px; }
-        .bond-bar { flex: 1; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
-        .bond-fill { height: 100%; background: var(--accent-cyan); border-radius: 3px; transition: width 1s ease-out; }
-        .bond-val { font-size: 12px; font-family: var(--font-mono); color: var(--text-tertiary); min-width: 70px; text-align: right; }
-
-        .orbital-section h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
-        .orbital-chart { display: flex; flex-direction: column; gap: 8px; }
-        .orbital-level { display: flex; align-items: center; gap: var(--space-sm); }
-        .ol-label { font-size: 12px; font-family: var(--font-mono); color: var(--text-tertiary); min-width: 30px; }
-        .ol-bar-container { flex: 1; height: 24px; background: var(--bg-glass); border-radius: 4px; position: relative; }
-        .ol-bar {
-          position: absolute;
-          top: 2px; bottom: 2px;
-          width: 32px;
-          border-radius: 3px;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .ol-electrons { font-size: 10px; }
-        .ol-value { font-size: 12px; font-family: var(--font-mono); color: var(--text-tertiary); min-width: 70px; text-align: right; }
-
-        @media (max-width: 640px) { .q-stats { grid-template-columns: repeat(2, 1fr); } }
-      `}</style>
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }

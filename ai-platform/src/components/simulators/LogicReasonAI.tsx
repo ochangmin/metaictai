@@ -1,49 +1,214 @@
+
 'use client';
 import { useState } from 'react';
-const propositions = ['P → Q, P ∴ Q', '¬(P ∧ Q) ≡ (¬P ∨ ¬Q)', 'P ∨ Q, ¬P ∴ Q', '(P → Q) ∧ (Q → R) ∴ P → R'];
+
+const DATA_SET = [
+    { id: 'T-798', name: '로직리즌 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-185', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-811', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-912', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
+];
+
 export default function LogicReasonAI() {
-    const [sel, setSel] = useState(0);
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | { valid: boolean; truthTable: { P: boolean; Q: boolean; R?: boolean; result: boolean }[]; rule: string; steps: string[] }>(null);
-    const analyze = () => {
-        setLoading(true); setTimeout(() => {
-            const tables = [
-                [{ P: true, Q: true, result: true }, { P: true, Q: false, result: false }, { P: false, Q: true, result: true }, { P: false, Q: false, result: true }],
-                [{ P: true, Q: true, result: true }, { P: true, Q: false, result: true }, { P: false, Q: true, result: true }, { P: false, Q: false, result: true }],
-                [{ P: true, Q: true, result: true }, { P: true, Q: false, result: true }, { P: false, Q: true, result: true }, { P: false, Q: false, result: false }],
-                [{ P: true, Q: true, R: true, result: true }, { P: true, Q: true, R: false, result: false }, { P: false, Q: true, R: true, result: true }, { P: false, Q: false, R: true, result: true }],
-            ];
-            const rules = ['긍정논법 (Modus Ponens)', '드모르간 법칙', '선언적 삼단논법', '가언적 삼단논법'];
-            const allSteps = [['전제: P → Q', '전제: P', '결론: Q (Modus Ponens)'], ['¬(P ∧ Q)', '≡ (¬P ∨ ¬Q)', '드모르간 법칙에 의해 동치'], ['전제: P ∨ Q', '전제: ¬P', '결론: Q'], ['P → Q, Q → R', '이행성에 의해', '∴ P → R']];
-            setResult({ valid: true, truthTable: tables[sel] as any, rule: rules[sel], steps: allSteps[sel] }); setLoading(false);
-        }, 1200);
+
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
     };
+
+    const runSim = (item: any) => {
+        setLoading(true);
+        setSelected(null);
+        setTimeout(() => {
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
+            });
+            setLoading(false);
+        }, 1600);
+    };
+
     return (
         <div className="sim-ui">
-            <h3 className="panel-title">논리 명제 선택</h3>
-            <div className="prop-list">{propositions.map((p, i) => (<button key={i} className={`prop-btn ${sel === i ? 'active' : ''}`} onClick={() => { setSel(i); setResult(null); }}><code>{p}</code></button>))}</div>
-            <button className="btn btn-primary run-btn" onClick={analyze} disabled={loading}>{loading ? '추론 중...' : '🧩 논리 추론 실행'}</button>
-            {loading && <div className="ld"><div className="loader" /><p>논리를 추론하고 있습니다...</p></div>}
-            {result && !loading && (<div className="results">
-                <div className="stat-row"><div className="sc"><span className="sl">유효성</span><span className="sv2" style={{ color: 'var(--accent-emerald)' }}>{result.valid ? '✅ 유효' : '❌ 무효'}</span></div><div className="sc"><span className="sl">적용 규칙</span><span className="sv2" style={{ color: 'var(--accent-purple)', fontSize: '14px' }}>{result.rule}</span></div></div>
-                <div className="sb"><h4>📊 진리표</h4><div className="tt"><div className="tt-header">{Object.keys(result.truthTable[0]).map(k => (<span key={k}>{k === 'result' ? '결과' : k}</span>))}</div>
-                    {result.truthTable.map((row, i) => (<div key={i} className="tt-row">{Object.values(row).map((v, j) => (<span key={j} className={typeof v === 'boolean' ? (v ? 'true' : 'false') : ''}>{typeof v === 'boolean' ? (v ? 'T' : 'F') : String(v)}</span>))}</div>))}</div></div>
-                <div className="sb"><h4>📝 추론 과정</h4><div className="steps">{result.steps.map((s, i) => (<div key={i} className="step"><span className="sn">{i + 1}</span><span>{s}</span></div>))}</div></div>
-            </div>)}
+            <div className="panel-header">
+                <h3>🧩 로직리즌 AI 허브</h3>
+                <p>논리 명제를 입력하면 진리표 생성, 추론 규칙 적용, 증명 과정을 시각화합니다.</p>
+            </div>
+
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
+                    </div>
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 로직리즌 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
+                                </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
+                        ))}
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
+                    </div>
+                </div>
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">🧩</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 로직리즌 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <style jsx>{`
-        .sim-ui{display:flex;flex-direction:column;gap:var(--space-lg)}.panel-title{font-size:16px;font-weight:700}
-        .prop-list{display:flex;flex-direction:column;gap:6px}.prop-btn{padding:10px var(--space-md);background:var(--bg-glass);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);text-align:left;cursor:pointer;transition:all var(--transition-fast);font-family:inherit;color:inherit}
-        .prop-btn:hover{border-color:var(--border-medium)}.prop-btn.active{border-color:var(--accent-purple);background:var(--accent-purple-dim)}.prop-btn code{font-family:var(--font-mono);font-size:13px}
-        .run-btn{width:100%;padding:14px}.ld{text-align:center;padding:var(--space-2xl)}.loader{width:40px;height:40px;border:3px solid var(--border-subtle);border-top-color:var(--accent-purple);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto var(--space-md)}
-        .results{animation:fadeInUp .5s ease-out}.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-md);margin-bottom:var(--space-xl)}
-        .sc{background:var(--bg-glass);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:var(--space-md);text-align:center}
-        .sl{display:block;font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}.sv2{font-size:18px;font-weight:700}
-        .sb{margin-bottom:var(--space-xl)}.sb h4{font-size:14px;font-weight:600;margin-bottom:var(--space-md)}
-        .tt{border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden}.tt-header,.tt-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:1px;padding:8px var(--space-md);font-size:13px;font-family:var(--font-mono);text-align:center}
-        .tt-header{background:var(--bg-glass);font-weight:700;color:var(--text-tertiary);font-size:11px}.tt-row{border-top:1px solid var(--border-subtle)}.true{color:var(--accent-emerald);font-weight:700}.false{color:var(--accent-rose);font-weight:700}
-        .steps{display:flex;flex-direction:column;gap:6px}.step{display:flex;align-items:center;gap:var(--space-sm);padding:8px var(--space-md);background:var(--bg-glass);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-mono)}
-        .sn{width:22px;height:22px;border-radius:50%;background:var(--accent-purple-dim);color:var(--accent-purple);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-      `}</style>
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
+
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
+
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
+
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }

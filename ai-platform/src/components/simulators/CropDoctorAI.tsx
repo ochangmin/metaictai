@@ -1,68 +1,214 @@
+
 'use client';
 import { useState } from 'react';
-const symptoms = ['🍂 잎 황변 (Chlorosis)', '🟤 갈변/반점 (Leaf Spot)', '🪱 구멍/식흔 (Insect Damage)', '📉 생장 저하 (Stunting)', '⚪ 흰가루 (Powdery Mildew)', '🔴 적변/괴사 (Necrosis)'];
-const crops = ['🌾 벼', '🥬 배추', '🍅 토마토', '🌽 옥수수', '🍓 딸기', '🥒 오이'];
+
+const DATA_SET = [
+    { id: 'T-312', name: '작물닥터 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-94', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-424', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-531', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
+];
+
 export default function CropDoctorAI() {
-    const [crop, setCrop] = useState(0); const [symptom, setSymptom] = useState(0); const [severity, setSeverity] = useState(3);
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | { diagnosis: { disease: string; probability: number; cause: string }[]; treatment: { method: string; timing: string; detail: string }[]; prevention: string[]; riskLevel: string; spreadRisk: number; economicLoss: number }>(null);
-    const simulate = () => {
-        setLoading(true); setTimeout(() => {
-            const diagMap = [
-                [{ disease: '철분 결핍', probability: 75, cause: '토양 pH 높음으로 철 흡수 장애' }, { disease: '질소 결핍', probability: 60, cause: '기비량 부족 또는 질소 유실' }, { disease: '마그네슘 결핍', probability: 35, cause: '산성 토양에서 Mg 용탈' }],
-                [{ disease: '잿빛곰팡이병', probability: 82, cause: 'Botrytis cinerea 균 감염' }, { disease: '탄저병', probability: 65, cause: 'Colletotrichum 감염' }, { disease: '세균성 점무늬병', probability: 40, cause: '세균 전파 (고온다습)' }],
-                [{ disease: '담배거세미나방', probability: 78, cause: '야행성 해충 유충 가해' }, { disease: '배추좀나방', probability: 62, cause: '십자화과 전문 해충' }, { disease: '진딧물', probability: 55, cause: '즙액 흡즙 및 바이러스 매개' }],
-                [{ disease: '모자이크바이러스', probability: 70, cause: '진딧물 매개 바이러스 감염' }, { disease: '뿌리혹병', probability: 55, cause: '토양 전염성 곰팡이' }, { disease: '양분 경합', probability: 40, cause: '과밀 식재로 영양 경합' }],
-                [{ disease: '흰가루병', probability: 88, cause: 'Erysiphe 속 곰팡이 감염' }, { disease: '노균병', probability: 45, cause: '습도 높은 환경에서 발생' }],
-                [{ disease: '역병', probability: 72, cause: 'Phytophthora 감염 (토양)' }, { disease: '시들음병', probability: 58, cause: 'Fusarium 균 감염' }, { disease: '세균성 궤양병', probability: 35, cause: '세균성 병원체' }],
-            ];
-            const treatments = symptom < 2 ?
-                [{ method: '약제 방제', timing: '즉시 (발견 3일 이내)', detail: `${symptom === 0 ? '킬레이트 철 엽면시비 500배액' : '만코제브 수화제 500배액'} 7일 간격 2~3회 살포` }, { method: '환경 관리', timing: '지속', detail: '환기 개선, 이슬 맺힘 방지, 토양 배수 확인' }]
-                : symptom === 2 ? [{ method: '생물학적 방제', timing: '즉시', detail: 'BT(바실러스 튜링겐시스) 제제 살포 또는 천적 방사' }, { method: '물리적 방제', timing: '야간', detail: '페로몬 트랩 설치, 수확 후 잔재물 제거' }]
-                    : [{ method: '종합 방제', timing: '7일 이내', detail: '저항성 품종 교체 및 토양 소독 실시' }, { method: '영양 관리', timing: '즉시', detail: '균형 시비 및 미량원소 보충' }];
-            setResult({
-                diagnosis: diagMap[symptom] || diagMap[0], treatment: treatments,
-                prevention: ['저항성 품종 재배', '적정 재식 밀도 유지', '윤작 체계 도입', '예방적 약제 처리 (발생 전)'],
-                riskLevel: severity > 3 ? '높음' : severity > 2 ? '보통' : '낮음',
-                spreadRisk: severity * 15 + Math.random() * 20, economicLoss: severity * 8 + Math.random() * 10,
-            }); setLoading(false);
-        }, 2000);
+
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
     };
+
+    const runSim = (item: any) => {
+        setLoading(true);
+        setSelected(null);
+        setTimeout(() => {
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
+            });
+            setLoading(false);
+        }, 1600);
+    };
+
     return (
         <div className="sim-ui">
-            <h3 className="panel-title">🩺 작물 진단</h3>
-            <div className="form-section"><span className="fl">작물 선택</span><div className="pill-row">{crops.map((c, i) => (<button key={i} className={`pill ${crop === i ? 'active' : ''}`} onClick={() => { setCrop(i); setResult(null); }}>{c}</button>))}</div></div>
-            <div className="form-section"><span className="fl">증상 선택</span><div className="symptom-grid">{symptoms.map((s, i) => (<button key={i} className={`symp-btn ${symptom === i ? 'active' : ''}`} onClick={() => { setSymptom(i); setResult(null); }}>{s}</button>))}</div></div>
-            <div className="sg"><div className="sh"><span>심각도</span><span className="sv">{'⭐'.repeat(severity)} ({['', '경미', '약간', '보통', '심각', '매우 심각'][severity]})</span></div><input type="range" className="slider" min={1} max={5} value={severity} onChange={e => { setSeverity(parseInt(e.target.value)); setResult(null); }} /></div>
-            <button className="btn btn-primary run-btn" onClick={simulate} disabled={loading}>{loading ? '진단 중...' : '🩺 AI 병해충 진단 실행'}</button>
-            {loading && <div className="ld"><div className="loader" /><p>증상을 분석하고 진단 중입니다...</p></div>}
-            {result && !loading && (<div className="results">
-                <div className={`risk-badge risk-${result.riskLevel === '높음' ? 'high' : result.riskLevel === '보통' ? 'mid' : 'low'}`}>위험도: {result.riskLevel} | 전파 위험: {result.spreadRisk.toFixed(0)}% | 예상 손실: {result.economicLoss.toFixed(0)}%</div>
-                <div className="sb"><h4>🔬 진단 결과</h4>{result.diagnosis.map((d, i) => (
-                    <div key={i} className="diag-item"><div className="diag-head"><span className="diag-name">{d.disease}</span><span className="diag-prob" style={{ color: d.probability > 70 ? 'var(--accent-rose)' : 'var(--accent-amber)' }}>{d.probability}%</span></div><span className="diag-cause">원인: {d.cause}</span></div>))}</div>
-                <div className="sb"><h4>💊 치료 방안</h4>{result.treatment.map((t, i) => (
-                    <div key={i} className="treat-item"><div className="treat-head"><span className="treat-method">{t.method}</span><span className="treat-time">{t.timing}</span></div><span className="treat-detail">{t.detail}</span></div>))}</div>
-                <div className="sb"><h4>🛡️ 예방 대책</h4><div className="prev-list">{result.prevention.map((p, i) => (<div key={i} className="prev-item"><span className="prev-n">{i + 1}</span><span>{p}</span></div>))}</div></div>
-            </div>)}
+            <div className="panel-header">
+                <h3>🩺 작물닥터 AI 허브</h3>
+                <p>작물 증상을 선택하면 AI가 병해충을 진단하고 치료 방안, 예방 대책을 처방합니다.</p>
+            </div>
+
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
+                    </div>
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 작물닥터 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
+                                </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
+                        ))}
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
+                    </div>
+                </div>
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">🩺</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 작물닥터 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <style jsx>{`
-        .sim-ui{display:flex;flex-direction:column;gap:var(--space-lg)}.panel-title{font-size:16px;font-weight:700}
-        .form-section{margin-bottom:var(--space-sm)}.fl{font-size:13px;font-weight:500;display:block;margin-bottom:8px}
-        .pill-row{display:flex;flex-wrap:wrap;gap:6px}.pill{padding:6px 12px;font-size:11px;border-radius:var(--radius-full);background:var(--bg-glass);border:1px solid var(--border-subtle);color:var(--text-secondary);cursor:pointer;transition:all var(--transition-fast);font-family:inherit}.pill:hover{border-color:var(--border-medium)}.pill.active{background:var(--accent-emerald-dim);border-color:var(--accent-emerald);color:var(--accent-emerald)}
-        .symptom-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.symp-btn{padding:8px 12px;background:var(--bg-glass);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);font-size:11px;cursor:pointer;transition:all var(--transition-fast);font-family:inherit;color:inherit;text-align:left}.symp-btn:hover{border-color:var(--border-medium)}.symp-btn.active{border-color:var(--accent-rose);background:var(--accent-rose-dim);color:var(--accent-rose)}
-        .sg{margin:var(--space-sm) 0}.sh{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px}.sv{font-weight:600;font-size:12px;color:var(--accent-amber)}
-        .slider{width:100%;height:6px;-webkit-appearance:none;appearance:none;background:var(--bg-glass-strong);border-radius:3px;outline:none}.slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent-rose);cursor:pointer}
-        .run-btn{width:100%;padding:14px}.ld{text-align:center;padding:var(--space-2xl)}.loader{width:40px;height:40px;border:3px solid var(--border-subtle);border-top-color:var(--accent-rose);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto var(--space-md)}
-        .results{animation:fadeInUp .5s ease-out}
-        .risk-badge{padding:var(--space-md);border-radius:var(--radius-md);font-size:14px;font-weight:600;text-align:center;margin-bottom:var(--space-xl)}.risk-high{background:var(--accent-rose-dim);border:1px solid rgba(255,82,82,.3);color:var(--accent-rose)}.risk-mid{background:var(--accent-amber-dim);border:1px solid rgba(255,196,0,.3);color:var(--accent-amber)}.risk-low{background:var(--accent-emerald-dim);border:1px solid rgba(0,230,118,.3);color:var(--accent-emerald)}
-        .sb{margin-bottom:var(--space-xl)}.sb h4{font-size:14px;font-weight:600;margin-bottom:var(--space-md)}
-        .diag-item{padding:12px var(--space-md);background:var(--bg-glass);border-radius:var(--radius-sm);margin-bottom:6px}
-        .diag-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}.diag-name{font-weight:700;font-size:14px}.diag-prob{font-family:var(--font-mono);font-size:16px;font-weight:800}.diag-cause{font-size:12px;color:var(--text-tertiary)}
-        .treat-item{padding:12px var(--space-md);background:var(--bg-glass);border-radius:var(--radius-sm);margin-bottom:6px;border-left:3px solid var(--accent-emerald)}
-        .treat-head{display:flex;justify-content:space-between;margin-bottom:4px}.treat-method{font-weight:700;font-size:13px;color:var(--accent-emerald)}.treat-time{font-size:11px;color:var(--accent-amber);font-weight:600}.treat-detail{font-size:12px;color:var(--text-secondary);line-height:1.6}
-        .prev-list{display:flex;flex-direction:column;gap:6px}.prev-item{display:flex;align-items:center;gap:var(--space-sm);padding:8px var(--space-md);background:var(--bg-glass);border-radius:var(--radius-sm);font-size:13px}
-        .prev-n{width:22px;height:22px;border-radius:50%;background:var(--accent-cyan-dim);color:var(--accent-cyan);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-        @media(max-width:640px){.symptom-grid{grid-template-columns:1fr}}
-      `}</style>
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
+
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
+
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
+
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }

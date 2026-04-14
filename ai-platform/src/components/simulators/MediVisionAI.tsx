@@ -1,211 +1,214 @@
-'use client';
 
+'use client';
 import { useState } from 'react';
 
-const mockImages = [
-    { name: 'Chest X-Ray #1', type: 'X-Ray', emoji: '🫁' },
-    { name: 'Brain MRI #1', type: 'MRI', emoji: '🧠' },
-    { name: 'Retinal Scan #1', type: 'Fundus', emoji: '👁️' },
+const DATA_SET = [
+    { id: 'T-755', name: '메디비전 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-808', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-39', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-938', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
 ];
 
 export default function MediVisionAI() {
-    const [selectedImage, setSelectedImage] = useState<number | null>(null);
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | {
-        findings: { label: string; confidence: number; severity: string; x: number; y: number; w: number; h: number }[];
-        overallRisk: string;
-        recommendation: string;
-    }>(null);
 
-    const analyze = () => {
-        if (selectedImage === null) return;
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
+    };
+
+    const runSim = (item: any) => {
         setLoading(true);
+        setSelected(null);
         setTimeout(() => {
-            const type = mockImages[selectedImage].type;
-            const findings = type === 'X-Ray' ? [
-                { label: '폐 결절 의심', confidence: 87.3, severity: '주의', x: 35, y: 30, w: 15, h: 15 },
-                { label: '흉수 가능성', confidence: 62.1, severity: '관찰', x: 20, y: 60, w: 30, h: 20 },
-            ] : type === 'MRI' ? [
-                { label: '신호 강도 이상', confidence: 91.5, severity: '주의', x: 40, y: 25, w: 20, h: 18 },
-                { label: '미세 출혈 의심', confidence: 55.8, severity: '관찰', x: 55, y: 50, w: 12, h: 12 },
-            ] : [
-                { label: '미세혈관류 발견', confidence: 78.9, severity: '주의', x: 30, y: 35, w: 10, h: 10 },
-                { label: '삼출물 의심', confidence: 68.4, severity: '관찰', x: 55, y: 45, w: 14, h: 14 },
-                { label: '시신경 유두 부종', confidence: 45.2, severity: '관찰', x: 42, y: 42, w: 16, h: 16 },
-            ];
-            setResult({
-                findings,
-                overallRisk: findings.some(f => f.confidence > 80) ? '중간' : '낮음',
-                recommendation: type === 'X-Ray'
-                    ? 'CT 추가 검사를 권장합니다. 폐 결절의 정밀 분석이 필요합니다.'
-                    : type === 'MRI'
-                        ? '신경외과 전문의 상담을 권장합니다.'
-                        : '안과 전문의의 정밀 검사를 권장합니다.',
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
             });
             setLoading(false);
-        }, 2000);
+        }, 1600);
     };
 
     return (
-        <div className="medi-sim">
-            <h3 className="panel-title">의료 이미지 선택</h3>
-            <div className="image-select">
-                {mockImages.map((img, i) => (
-                    <button
-                        key={i}
-                        className={`img-option ${selectedImage === i ? 'active' : ''}`}
-                        onClick={() => { setSelectedImage(i); setResult(null); }}
-                    >
-                        <span className="img-emoji">{img.emoji}</span>
-                        <span className="img-name">{img.name}</span>
-                        <span className="img-type">{img.type}</span>
-                    </button>
-                ))}
+        <div className="sim-ui">
+            <div className="panel-header">
+                <h3>🩺 메디비전 AI 허브</h3>
+                <p>의료 이미지를 분석하여 바운딩 박스와 진단 신뢰도를 시각화합니다.</p>
             </div>
 
-            <button className="btn btn-primary run-btn" onClick={analyze} disabled={selectedImage === null || loading}>
-                {loading ? '분석 중...' : '🩺 AI 진단 분석 실행'}
-            </button>
-
-            {loading && (
-                <div className="loading-state">
-                    <div className="loader" />
-                    <p>AI가 의료 이미지를 분석 중입니다...</p>
-                </div>
-            )}
-
-            {result && !loading && (
-                <div className="medi-results">
-                    {/* Image with bounding boxes */}
-                    <div className="image-viewer">
-                        <div className="mock-image">
-                            <span className="mock-bg-emoji">{mockImages[selectedImage!].emoji}</span>
-                            {result.findings.map((f, i) => (
-                                <div
-                                    key={i}
-                                    className={`bbox ${f.severity === '주의' ? 'warn' : 'info'}`}
-                                    style={{ left: `${f.x}%`, top: `${f.y}%`, width: `${f.w}%`, height: `${f.h}%` }}
-                                >
-                                    <span className="bbox-label">{f.label} ({f.confidence.toFixed(1)}%)</span>
-                                </div>
-                            ))}
-                        </div>
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
                     </div>
-
-                    {/* Findings */}
-                    <div className="findings-panel">
-                        <div className="findings-header">
-                            <h3>🔍 분석 결과</h3>
-                            <span className={`risk-badge ${result.overallRisk === '중간' ? 'med' : 'low'}`}>
-                                위험도: {result.overallRisk}
-                            </span>
-                        </div>
-                        {result.findings.map((f, i) => (
-                            <div key={i} className="finding-item">
-                                <div className="finding-top">
-                                    <span className={`severity-dot ${f.severity === '주의' ? 'warn' : 'info'}`} />
-                                    <span className="finding-label">{f.label}</span>
-                                    <span className="finding-severity">{f.severity}</span>
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 메디비전 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
                                 </div>
-                                <div className="confidence-bar">
-                                    <div className="confidence-fill" style={{ width: `${f.confidence}%`, background: f.confidence > 80 ? 'var(--accent-rose)' : 'var(--accent-amber)' }} />
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
                                 </div>
-                                <span className="finding-conf">{f.confidence.toFixed(1)}%</span>
-                            </div>
+                            </button>
                         ))}
-                        <div className="recommendation">
-                            <h4>💡 권장사항</h4>
-                            <p>{result.recommendation}</p>
-                        </div>
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
                     </div>
                 </div>
-            )}
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">🩺</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 메디비전 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <style jsx>{`
-        .medi-sim { display: flex; flex-direction: column; gap: var(--space-xl); }
-        .panel-title { font-size: 16px; font-weight: 700; margin-bottom: var(--space-md); }
-        .image-select { display: flex; gap: var(--space-md); margin-bottom: var(--space-md); flex-wrap: wrap; }
-        .img-option {
-          flex: 1; min-width: 140px;
-          padding: var(--space-lg);
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          display: flex; flex-direction: column; align-items: center; gap: 8px;
-          cursor: pointer; transition: all var(--transition-fast);
-          font-family: inherit; color: inherit;
-        }
-        .img-option:hover { border-color: var(--border-medium); }
-        .img-option.active { border-color: var(--accent-cyan); background: var(--accent-cyan-dim); }
-        .img-emoji { font-size: 36px; }
-        .img-name { font-size: 13px; font-weight: 600; }
-        .img-type { font-size: 11px; color: var(--text-tertiary); }
-        .run-btn { width: 100%; padding: 14px; }
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
 
-        .loading-state { text-align: center; padding: var(--space-2xl); }
-        .loader { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--accent-rose); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--space-md); }
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
-        .medi-results { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xl); animation: fadeInUp 0.5s ease-out; }
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
 
-        .image-viewer { }
-        .mock-image {
-          position: relative;
-          width: 100%; padding-bottom: 100%;
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-        }
-        .mock-bg-emoji {
-          position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
-          font-size: 80px;
-          opacity: 0.2;
-        }
-        .bbox {
-          position: absolute;
-          border: 2px solid;
-          border-radius: 4px;
-          animation: fadeIn 0.5s ease-out;
-        }
-        .bbox.warn { border-color: var(--accent-rose); background: rgba(255,82,82,0.1); }
-        .bbox.info { border-color: var(--accent-amber); background: rgba(255,215,64,0.1); }
-        .bbox-label {
-          position: absolute;
-          top: -20px; left: 0;
-          font-size: 10px; font-weight: 600;
-          padding: 2px 6px;
-          border-radius: 3px;
-          white-space: nowrap;
-          background: rgba(0,0,0,0.8);
-          color: var(--text-primary);
-        }
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
 
-        .findings-panel { }
-        .findings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); }
-        .findings-header h3 { font-size: 18px; font-weight: 700; }
-        .risk-badge { padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 700; }
-        .risk-badge.med { background: var(--accent-amber-dim); color: var(--accent-amber); }
-        .risk-badge.low { background: var(--accent-emerald-dim); color: var(--accent-emerald); }
-
-        .finding-item { margin-bottom: var(--space-md); padding: var(--space-md); background: var(--bg-glass); border-radius: var(--radius-sm); }
-        .finding-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .severity-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .severity-dot.warn { background: var(--accent-rose); }
-        .severity-dot.info { background: var(--accent-amber); }
-        .finding-label { font-size: 14px; font-weight: 600; flex: 1; }
-        .finding-severity { font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
-        .confidence-bar { height: 4px; background: var(--bg-glass-strong); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
-        .confidence-fill { height: 100%; border-radius: 2px; transition: width 1s ease-out; }
-        .finding-conf { font-size: 12px; font-family: var(--font-mono); color: var(--text-tertiary); }
-
-        .recommendation { margin-top: var(--space-lg); padding: var(--space-md); background: var(--accent-cyan-dim); border: 1px solid rgba(0,229,255,0.2); border-radius: var(--radius-md); }
-        .recommendation h4 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-        .recommendation p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-
-        @media (max-width: 768px) { .medi-results { grid-template-columns: 1fr; } }
-      `}</style>
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }

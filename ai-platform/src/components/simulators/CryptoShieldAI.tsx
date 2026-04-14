@@ -1,57 +1,214 @@
+
 'use client';
 import { useState } from 'react';
-const algos = ['AES-256', 'RSA-2048', 'SHA-3', 'ChaCha20-Poly1305'];
+
+const DATA_SET = [
+    { id: 'T-85', name: '크립토실드 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-250', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-859', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-221', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
+];
+
 export default function CryptoShieldAI() {
-    const [input, setInput] = useState('MetaICT 보안 데이터 분석 샘플 텍스트');
-    const [algo, setAlgo] = useState(0);
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | { strength: number; entropy: number; bruteForceTime: string; vulnerabilities: { name: string; severity: string; desc: string }[]; hashPreview: string }>(null);
-    const analyze = () => {
-        setLoading(true); setTimeout(() => {
-            const a = algo; setResult({
-                strength: 85 + a * 3 + Math.random() * 8, entropy: 6.5 + a * 0.3 + Math.random() * 1,
-                bruteForceTime: a >= 2 ? '10²⁵⁶ 년' : a === 1 ? '10⁷⁷ 년' : '10³⁴ 년',
-                vulnerabilities: a === 0 ? [{ name: 'Padding Oracle', severity: '보통', desc: '패딩 오라클 공격에 대한 구현 수준 점검 필요' }] : a === 1 ? [{ name: 'Timing Attack', severity: '낮음', desc: '일정 시간 비교 함수 적용 여부 확인' }] : [],
-                hashPreview: Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-            }); setLoading(false);
-        }, 1500);
+
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
     };
+
+    const runSim = (item: any) => {
+        setLoading(true);
+        setSelected(null);
+        setTimeout(() => {
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
+            });
+            setLoading(false);
+        }, 1600);
+    };
+
     return (
         <div className="sim-ui">
-            <h3 className="panel-title">암호화 분석</h3>
-            <textarea className="input-field" value={input} onChange={e => { setInput(e.target.value); setResult(null); }} rows={2} placeholder="분석할 텍스트 입력..." />
-            <div className="algo-select">{algos.map((a, i) => (<button key={i} className={`pill ${algo === i ? 'active' : ''}`} onClick={() => { setAlgo(i); setResult(null); }}>{a}</button>))}</div>
-            <button className="btn btn-primary run-btn" onClick={analyze} disabled={!input.trim() || loading}>{loading ? '분석 중...' : '🔐 보안 분석 실행'}</button>
-            {loading && <div className="loading-state"><div className="loader" /><p>암호화 강도를 분석 중입니다...</p></div>}
-            {result && !loading && (
-                <div className="results">
-                    <div className="stat-row">
-                        <div className="stat-card"><span className="s-label">보안 강도</span><span className="s-val" style={{ color: result.strength > 90 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>{result.strength.toFixed(1)}%</span></div>
-                        <div className="stat-card"><span className="s-label">엔트로피</span><span className="s-val" style={{ color: 'var(--accent-cyan)' }}>{result.entropy.toFixed(2)}</span></div>
-                        <div className="stat-card"><span className="s-label">무차별 대입</span><span className="s-val" style={{ color: 'var(--accent-purple)', fontSize: '16px' }}>{result.bruteForceTime}</span></div>
+            <div className="panel-header">
+                <h3>🔐 크립토실드 AI 허브</h3>
+                <p>암호화 알고리즘의 강도를 분석하고 보안 취약점을 시각적으로 진단합니다.</p>
+            </div>
+
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
                     </div>
-                    <div className="hash-box"><h4>🔑 해시 미리보기</h4><code className="hash-code">{result.hashPreview}</code></div>
-                    {result.vulnerabilities.length > 0 && <div className="vuln-box"><h4>⚠️ 취약점 ({result.vulnerabilities.length})</h4>
-                        {result.vulnerabilities.map((v, i) => (<div key={i} className="vuln-item"><span className={`vuln-sev ${v.severity === '보통' ? 'med' : 'low'}`}>{v.severity}</span><span className="vuln-name">{v.name}</span><span className="vuln-desc">{v.desc}</span></div>))}</div>}
-                    {result.vulnerabilities.length === 0 && <div className="safe-box">✅ 알려진 취약점이 발견되지 않았습니다</div>}
-                </div>)}
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 크립토실드 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
+                                </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
+                        ))}
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
+                    </div>
+                </div>
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">🔐</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 크립토실드 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <style jsx>{`
-        .sim-ui{display:flex;flex-direction:column;gap:var(--space-lg)}.panel-title{font-size:16px;font-weight:700}
-        .algo-select{display:flex;flex-wrap:wrap;gap:6px;margin:var(--space-sm) 0}
-        .pill{padding:8px 16px;font-size:12px;border-radius:var(--radius-full);background:var(--bg-glass);border:1px solid var(--border-subtle);color:var(--text-secondary);cursor:pointer;transition:all var(--transition-fast);font-family:var(--font-mono)}
-        .pill:hover{border-color:var(--border-medium)}.pill.active{background:var(--accent-rose-dim);border-color:var(--accent-rose);color:var(--accent-rose)}
-        .run-btn{width:100%;padding:14px}.loading-state{text-align:center;padding:var(--space-2xl)}.loader{width:40px;height:40px;border:3px solid var(--border-subtle);border-top-color:var(--accent-rose);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto var(--space-md)}
-        .results{animation:fadeInUp .5s ease-out}.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-md);margin-bottom:var(--space-xl)}
-        .stat-card{background:var(--bg-glass);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:var(--space-md);text-align:center}
-        .s-label{display:block;font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}.s-val{font-size:20px;font-weight:700}
-        .hash-box{margin-bottom:var(--space-xl)}.hash-box h4{font-size:14px;font-weight:600;margin-bottom:var(--space-sm)}
-        .hash-code{display:block;font-family:var(--font-mono);font-size:12px;padding:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-sm);color:var(--accent-cyan);word-break:break-all}
-        .vuln-box{margin-bottom:var(--space-lg)}.vuln-box h4{font-size:14px;font-weight:600;margin-bottom:var(--space-md)}
-        .vuln-item{display:flex;align-items:center;gap:var(--space-sm);padding:10px var(--space-md);background:var(--bg-glass);border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px}
-        .vuln-sev{padding:3px 8px;border-radius:var(--radius-full);font-size:10px;font-weight:700;flex-shrink:0}.vuln-sev.med{background:var(--accent-amber-dim);color:var(--accent-amber)}.vuln-sev.low{background:var(--accent-emerald-dim);color:var(--accent-emerald)}
-        .vuln-name{font-weight:600;flex-shrink:0}.vuln-desc{color:var(--text-secondary)}
-        .safe-box{padding:var(--space-md);background:var(--accent-emerald-dim);border:1px solid rgba(0,230,118,.2);border-radius:var(--radius-md);font-size:14px;color:var(--accent-emerald)}
-      `}</style>
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
+
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
+
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
+
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }

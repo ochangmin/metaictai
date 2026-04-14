@@ -1,194 +1,214 @@
-'use client';
 
+'use client';
 import { useState } from 'react';
 
-export default function MaterialGenAI() {
-    const [composition, setComposition] = useState({ carbon: 50, silicon: 30, titanium: 20 });
-    const [temp, setTemp] = useState(500);
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | {
-        tensile: number; hardness: number; density: number; melting: number;
-        durability: number; conductivity: number; grade: string;
-    }>(null);
+const DATA_SET = [
+    { id: 'T-465', name: '머티리얼젠 AI 표준 모델', type: 'STANDARD' },
+        { id: 'X-719', name: '고도화 시뮬레이션 베타', type: 'ADVANCED' },
+        { id: 'E-196', name: '실시간 리전 데이터셋 연동', type: 'REALTIME' },
+        { id: 'O-147', name: '히스토리컬 예측 가중치', type: 'HISTORICAL' }
+];
 
-    const simulate = () => {
-        setLoading(true);
-        setTimeout(() => {
-            const t = composition.titanium;
-            const c = composition.carbon;
-            setResult({
-                tensile: 400 + t * 8 + c * 2 + Math.random() * 50,
-                hardness: 55 + t * 0.5 + Math.random() * 10,
-                density: 4.2 + (composition.silicon * 0.02) + Math.random() * 0.5,
-                melting: 1200 + t * 15 + Math.random() * 200,
-                durability: 70 + t * 0.3 + c * 0.2 + Math.random() * 15,
-                conductivity: 20 + composition.silicon * 0.8 + Math.random() * 10,
-                grade: t > 30 ? 'A+' : t > 20 ? 'A' : 'B+',
-            });
-            setLoading(false);
-        }, 1800);
+export default function MaterialGenAI() {
+    const [search, setSearch] = useState('');
+    const [items, setItems] = useState(DATA_SET);
+    const [selected, setSelected] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setItems(DATA_SET);
+        } else {
+            setItems(DATA_SET.filter(s => s.name.includes(v) || s.id.includes(v)));
+        }
     };
 
-    const updateComp = (key: string, val: number) => {
-        const rest = 100 - val;
-        const others = Object.keys(composition).filter(k => k !== key);
-        const total = others.reduce((s, k) => s + composition[k as keyof typeof composition], 0);
-        const newComp = { ...composition, [key]: val };
-        others.forEach(k => {
-            newComp[k as keyof typeof composition] = total > 0 ? Math.round((composition[k as keyof typeof composition] / total) * rest) : Math.round(rest / others.length);
-        });
-        setComposition(newComp);
-        setResult(null);
+    const runSim = (item: any) => {
+        setLoading(true);
+        setSelected(null);
+        setTimeout(() => {
+            setSelected({
+                ...item,
+                kpiAlpha: (Math.random() * 20 + 80).toFixed(1),
+                kpiBeta: (Math.random() * 5 + 95).toFixed(1),
+                latency: (Math.random() * 50 + 10).toFixed(0),
+                energyCost: (Math.random() * 3 + 1).toFixed(2),
+                status: '최적화 성공'
+            });
+            setLoading(false);
+        }, 1600);
     };
 
     return (
-        <div className="mat-sim">
-            <div className="mat-controls">
-                <h3 className="panel-title">화학 성분 조절</h3>
-                {Object.entries(composition).map(([key, val]) => (
-                    <div key={key} className="slider-group">
-                        <div className="slider-header">
-                            <span className="slider-label">{key === 'carbon' ? '탄소 (C)' : key === 'silicon' ? '실리콘 (Si)' : '티타늄 (Ti)'}</span>
-                            <span className="slider-value">{val}%</span>
-                        </div>
-                        <input
-                            type="range" min={0} max={80} value={val}
-                            onChange={e => updateComp(key, parseInt(e.target.value))}
-                            className="slider"
-                            style={{ '--fill': key === 'carbon' ? 'var(--accent-cyan)' : key === 'silicon' ? 'var(--accent-purple)' : 'var(--accent-amber)' } as React.CSSProperties}
-                        />
-                    </div>
-                ))}
-
-                <div className="slider-group">
-                    <div className="slider-header">
-                        <span className="slider-label">소결 온도</span>
-                        <span className="slider-value">{temp}°C</span>
-                    </div>
-                    <input type="range" min={200} max={1500} step={50} value={temp}
-                        onChange={e => { setTemp(parseInt(e.target.value)); setResult(null); }}
-                        className="slider" style={{ '--fill': 'var(--accent-rose)' } as React.CSSProperties}
-                    />
-                </div>
-
-                <button className="btn btn-primary run-btn" onClick={simulate} disabled={loading}>
-                    {loading ? '시뮬레이션 중...' : '🔬 물성 시뮬레이션 실행'}
-                </button>
+        <div className="sim-ui">
+            <div className="panel-header">
+                <h3>🔬 머티리얼젠 AI 허브</h3>
+                <p>화학 성분 슬라이더를 조절하여 신소재의 물성, 내구성, 강도를 시뮬레이션합니다.</p>
             </div>
 
-            {loading && (
-                <div className="loading-state">
-                    <div className="loader" />
-                    <p>AI가 소재 물성을 계산 중입니다...</p>
-                </div>
-            )}
-
-            {result && !loading && (
-                <div className="mat-results">
-                    <div className="mat-grade-row">
-                        <h3>📊 물성 분석 결과</h3>
-                        <span className="grade-badge">{result.grade}</span>
+            <div className="dashboard-layout">
+                {/* Left Panel */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="분석 대상 모델 / 데이터셋 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
                     </div>
-                    <div className="mat-grid">
-                        {[
-                            { label: '인장강도', value: `${result.tensile.toFixed(0)} MPa`, color: 'var(--accent-cyan)' },
-                            { label: '경도', value: `${result.hardness.toFixed(1)} HRC`, color: 'var(--accent-purple)' },
-                            { label: '밀도', value: `${result.density.toFixed(2)} g/cm³`, color: 'var(--accent-amber)' },
-                            { label: '녹는점', value: `${result.melting.toFixed(0)}°C`, color: 'var(--accent-rose)' },
-                            { label: '내구성', value: `${result.durability.toFixed(1)}%`, color: 'var(--accent-emerald)' },
-                            { label: '전도율', value: `${result.conductivity.toFixed(1)} S/m`, color: 'var(--accent-blue)' },
-                        ].map(item => (
-                            <div key={item.label} className="mat-stat">
-                                <span className="mat-stat-label">{item.label}</span>
-                                <span className="mat-stat-value" style={{ color: item.color }}>{item.value}</span>
-                                <div className="mat-stat-bar">
-                                    <div className="mat-stat-bar-fill" style={{ width: `${Math.min(parseFloat(item.value) / 15, 100)}%`, background: item.color }} />
+                    
+                    <div className="station-list">
+                        <div className="list-header">가용 머티리얼젠 AI 리소스</div>
+                        {items.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => runSim(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.type}</span>
+                                </div>
+                                <div className="st-badge" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)', color: 'var(--accent-cyan)' }}>
+                                    대기중
+                                </div>
+                            </button>
+                        ))}
+                        {items.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
+                    </div>
+                </div>
+
+                {/* Right Panel */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">🔬</div>
+                            <p>좌측 목록에서 데이터 또는 모델을 선택하시면<br/>실시간 클라우드 분석이 시작됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>글로벌 클러스터의 컴퓨팅 자원을 할당받아 머티리얼젠 AI 연산을 진행중입니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>처리 대상: {selected.type} · 연결 ID: {selected.id} · <span style={{ color: 'var(--accent-emerald)' }}>Live Inference</span></p>
+                                </div>
+                                <div className="status-hero">
+                                    <span>연산 상태</span>
+                                    <strong style={{ color: 'var(--accent-emerald)' }}>{selected.status}</strong>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                            
+                            <h4 className="section-title">주요 성능 지표 (KPI Metrics)</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>예측 정확도 (Accuracy)</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiAlpha}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiAlpha}%`, background: 'var(--accent-cyan)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>파라미터 안정성</span>
+                                    <div className="val">
+                                        <strong>{selected.kpiBeta}</strong> <small>%</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${selected.kpiBeta}%`, background: 'var(--accent-emerald)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>추론 지연시간</span>
+                                    <div className="val">
+                                        <strong>{selected.latency}</strong> <small>ms</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '30%', background: 'var(--accent-amber)' }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>연산 비용 지수</span>
+                                    <div className="val">
+                                        <strong>{selected.energyCost}</strong> <small>kW/h</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: '45%', background: 'var(--accent-rose)' }} /></div>
+                                </div>
+                            </div>
 
-                    <div className="radar-mock">
-                        <h4>성능 레이더 차트</h4>
-                        <div className="radar-chart">
-                            <svg viewBox="0 0 200 200" className="radar-svg">
-                                <polygon points="100,20 180,80 160,170 40,170 20,80" fill="none" stroke="var(--border-subtle)" strokeWidth="1" />
-                                <polygon points="100,40 160,80 145,150 55,150 40,80" fill="none" stroke="var(--border-subtle)" strokeWidth="0.5" />
-                                <polygon points="100,60 140,85 130,135 70,135 60,85" fill="none" stroke="var(--border-subtle)" strokeWidth="0.5" />
-                                <polygon
-                                    points={`100,${20 + (1 - result.tensile / 800) * 80} ${100 + (result.hardness / 100) * 80},80 ${100 + (result.durability / 100) * 60},${100 + (result.density / 8) * 70} ${100 - (result.conductivity / 50) * 60},${100 + (result.melting / 2000) * 70} ${100 - (result.hardness / 100) * 80},80`}
-                                    fill="rgba(0,229,255,0.15)" stroke="var(--accent-cyan)" strokeWidth="2"
-                                />
-                            </svg>
+                            <div className="action-row">
+                                <button className="btn btn-secondary">📊 이력 데이터 비교</button>
+                                <button className="btn btn-primary">🌐 세부 리포트 다운로드 및 공유</button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
-            )}
+            </div>
 
             <style jsx>{`
-        .mat-sim { display: flex; flex-direction: column; gap: var(--space-xl); }
-        .panel-title { font-size: 16px; font-weight: 700; margin-bottom: var(--space-lg); }
-        .slider-group { margin-bottom: var(--space-md); }
-        .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .slider-label { font-size: 13px; font-weight: 500; }
-        .slider-value { font-size: 13px; font-weight: 700; font-family: var(--font-mono); color: var(--accent-cyan); }
-        .slider {
-          width: 100%;
-          height: 6px;
-          -webkit-appearance: none;
-          appearance: none;
-          background: var(--bg-glass-strong);
-          border-radius: 3px;
-          outline: none;
-        }
-        .slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 16px; height: 16px;
-          border-radius: 50%;
-          background: var(--fill, var(--accent-cyan));
-          cursor: pointer;
-          box-shadow: 0 0 8px rgba(0,229,255,0.3);
-        }
-        .run-btn { width: 100%; margin-top: var(--space-md); padding: 14px; }
+                .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+                .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-cyan); display:flex; align-items:center; gap:8px;}
+                .panel-header p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+                
+                .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 520px; }
+                
+                .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+                .search-box { position: relative; margin-bottom: var(--space-md); }
+                .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+                .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 13px; transition: border 0.3s; }
+                .search-box input:focus { outline: none; border-color: var(--accent-cyan); }
+                
+                .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+                .station-list::-webkit-scrollbar { width: 6px; }
+                .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+                .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+                
+                .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+                .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+                .station-item.active { background: rgba(0,229,255,0.1); border-color: var(--accent-cyan); }
+                .st-info { display: flex; flex-direction: column; gap: 4px; }
+                .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+                .st-info span { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+                .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
 
-        .loading-state { text-align: center; padding: var(--space-2xl); }
-        .loader { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--space-md); }
+                .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+                .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+                .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+                .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
-        .mat-results { animation: fadeInUp 0.5s ease-out; }
-        .mat-grade-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); }
-        .mat-grade-row h3 { font-size: 18px; font-weight: 700; }
-        .grade-badge {
-          font-size: 18px; font-weight: 800;
-          padding: 8px 20px;
-          border-radius: var(--radius-full);
-          background: var(--accent-cyan-dim);
-          color: var(--accent-cyan);
-        }
-        .mat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
-        .mat-stat {
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          padding: var(--space-md);
-        }
-        .mat-stat-label { display: block; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .mat-stat-value { font-size: 20px; font-weight: 700; display: block; margin-bottom: 8px; }
-        .mat-stat-bar { height: 4px; background: var(--bg-glass-strong); border-radius: 2px; overflow: hidden; }
-        .mat-stat-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease-out; }
+                .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+                .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+                .detail-header h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+                .detail-header p { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+                .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; height: 110px; border: 2px solid var(--accent-emerald); border-radius: 50%; background: #000; box-shadow: 0 0 20px rgba(0,230,118,0.2); }
+                .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+                .status-hero strong { font-size: 18px; font-weight: 800; }
 
-        .radar-mock h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
-        .radar-chart {
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          padding: var(--space-lg);
-          display: flex;
-          justify-content: center;
-        }
-        .radar-svg { max-width: 280px; width: 100%; }
+                .section-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-lg); color: #fff; }
+                .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+                .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-lg); border-radius: var(--radius-md); }
+                .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+                .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+                .val strong { font-size: 30px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+                .val small { font-size: 13px; color: var(--text-tertiary); }
+                .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+                .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
 
-        @media (max-width: 640px) { .mat-grid { grid-template-columns: repeat(2, 1fr); } }
-      `}</style>
+                .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+                
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                
+                @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 300px; } .metrics-grid { grid-template-columns: 1fr; } }
+            `}</style>
         </div>
     );
 }
