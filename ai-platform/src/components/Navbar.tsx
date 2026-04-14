@@ -23,19 +23,26 @@ export default function Navbar() {
       <div className="navbar-inner">
         <Link href="/" className="navbar-brand">
           <div className="brand-icon">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <rect width="28" height="28" rx="8" fill="url(#brand-grad)" />
-              <path d="M8 14L14 8L20 14L14 20L8 14Z" fill="#0a0a0f" fillOpacity="0.6" />
-              <path d="M14 10L18 14L14 18L10 14L14 10Z" fill="#fff" fillOpacity="0.9" />
+            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="brand-grad" x1="0" y1="0" x2="28" y2="28">
-                  <stop stopColor="#00e5ff" />
-                  <stop offset="1" stopColor="#b388ff" />
+                <linearGradient id="nav-brand-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#7e3ba6" />
+                  <stop offset="50%" stopColor="#df3a7a" />
+                  <stop offset="100%" stopColor="#eda344" />
                 </linearGradient>
               </defs>
+              <g stroke="url(#nav-brand-grad)" strokeWidth="8" strokeLinejoin="round" strokeLinecap="round">
+                <polygon points="50,10 84.64,30 84.64,70 50,90 15.36,70 15.36,30" />
+                <line x1="50" y1="50" x2="84.64" y2="30" />
+                <line x1="50" y1="50" x2="50" y2="90" />
+                <line x1="50" y1="50" x2="15.36" y2="30" />
+                <polygon points="50,20 67.32,30 50,40 32.68,30" />
+                <polygon points="75.98,45 75.98,65 58.66,75 58.66,55" />
+                <polygon points="24.02,45 41.34,55 41.34,75 24.02,65" />
+              </g>
             </svg>
           </div>
-          <span className="brand-text">Meta<span className="brand-ai"> R&D</span></span>
+          <span className="brand-text">Meta<span className="brand-ai">ICT</span></span>
         </Link>
 
         <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
@@ -105,12 +112,13 @@ export default function Navbar() {
           align-items: center;
         }
         .brand-text {
-          font-size: 18px;
+          font-size: 20px;
           font-weight: 800;
           letter-spacing: -0.5px;
+          color: #7e3ba6;
         }
         .brand-ai {
-          background: var(--gradient-cyan);
+          background: linear-gradient(90deg, #448aff, #2979ff);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
