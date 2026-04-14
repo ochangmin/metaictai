@@ -50,6 +50,13 @@ const FinRiskAI = dynamic(() => import('@/components/simulators/FinRiskAI'));
 const ChemReactAI = dynamic(() => import('@/components/simulators/ChemReactAI'));
 const NetworkTopoAI = dynamic(() => import('@/components/simulators/NetworkTopoAI'));
 
+// Domestic R&D AI Simulators
+const SemiConAI = dynamic(() => import('@/components/simulators/SemiConAI'));
+const BatterySimAI = dynamic(() => import('@/components/simulators/BatterySimAI'));
+const KCultureAI = dynamic(() => import('@/components/simulators/KCultureAI'));
+const DemoGraphAI = dynamic(() => import('@/components/simulators/DemoGraphAI'));
+const ShipBuildAI = dynamic(() => import('@/components/simulators/ShipBuildAI'));
+
 // Agriculture & Crop Growth AI (10)
 const SoilAnalyzerAI = dynamic(() => import('@/components/simulators/SoilAnalyzerAI'));
 const CropDoctorAI = dynamic(() => import('@/components/simulators/CropDoctorAI'));
@@ -103,6 +110,12 @@ const simComponents: Record<string, React.ComponentType> = {
   finrisk: FinRiskAI,
   chemreact: ChemReactAI,
   networktopo: NetworkTopoAI,
+  // Domestic R&D
+  semicon: SemiConAI,
+  batterysim: BatterySimAI,
+  kculture: KCultureAI,
+  demograph: DemoGraphAI,
+  shipbuild: ShipBuildAI,
   // Agriculture & Crop Growth
   soilanalyzer: SoilAnalyzerAI,
   cropdoctor: CropDoctorAI,
