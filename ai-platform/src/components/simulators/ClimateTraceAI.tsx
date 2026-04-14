@@ -1,211 +1,219 @@
 'use client';
-
 import { useState } from 'react';
 
-const regions = [
-    { name: '북극', emoji: '🧊', lat: 85 },
-    { name: '아마존', emoji: '🌳', lat: -3 },
-    { name: '사하라', emoji: '🏜️', lat: 23 },
-    { name: '동아시아', emoji: '🌏', lat: 35 },
+// Mock observatory data
+const ALL_STATIONS = [
+    { id: 'S001', region: '서울', name: '종로구 측정소', pm10: 45, pm25: 22, status: '보통', no2: 0.021, o3: 0.045 },
+    { id: 'S002', region: '서울', name: '강남구 대기관측소', pm10: 82, pm25: 41, status: '나쁨', no2: 0.038, o3: 0.051 },
+    { id: 'S003', region: '제주', name: '서귀포시 측정소', pm10: 20, pm25: 8, status: '좋음', no2: 0.008, o3: 0.030 },
+    { id: 'S004', region: '부산', name: '해운대구 측정망', pm10: 105, pm25: 55, status: '매우나쁨', no2: 0.042, o3: 0.060 },
+    { id: 'S005', region: '대전', name: '유성구 연구단지', pm10: 35, pm25: 15, status: '좋음', no2: 0.015, o3: 0.032 },
+    { id: 'S006', region: '경기', name: '수원시 영통구', pm10: 55, pm25: 28, status: '보통', no2: 0.025, o3: 0.040 }
 ];
 
 export default function ClimateTraceAI() {
-    const [region, setRegion] = useState(0);
-    const [year, setYear] = useState(2025);
+    const [search, setSearch] = useState('');
+    const [stations, setStations] = useState(ALL_STATIONS);
+    const [selected, setSelected] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<null | {
-        tempChange: number;
-        co2Level: number;
-        seaLevel: number;
-        iceArea: number;
-        heatmap: number[][];
-        yearlyData: { year: number; temp: number; co2: number }[];
-    }>(null);
 
-    const simulate = () => {
-        setLoading(true);
-        setTimeout(() => {
-            const factor = (year - 2000) / 50;
-            const r = region;
-            setResult({
-                tempChange: 0.8 + factor * (r === 0 ? 3.5 : r === 1 ? 1.8 : r === 2 ? 2.2 : 1.5) + Math.random() * 0.3,
-                co2Level: 380 + factor * 80 + Math.random() * 10,
-                seaLevel: factor * (r === 0 ? 45 : 25) + Math.random() * 5,
-                iceArea: Math.max(0, 100 - factor * (r === 0 ? 60 : 20) + Math.random() * 5),
-                heatmap: Array.from({ length: 8 }, () =>
-                    Array.from({ length: 12 }, () => Math.random() * (0.5 + factor * 2))
-                ),
-                yearlyData: Array.from({ length: 10 }, (_, i) => ({
-                    year: year - 9 + i,
-                    temp: 0.5 + ((year - 9 + i - 2000) / 50) * 2 + Math.random() * 0.3,
-                    co2: 370 + ((year - 9 + i - 2000) / 50) * 80,
-                })),
-            });
-            setLoading(false);
-        }, 1800);
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        if (v.trim() === '') {
+            setStations(ALL_STATIONS);
+        } else {
+            setStations(ALL_STATIONS.filter(s =>
+                s.name.includes(v) || s.region.includes(v) || s.id.includes(v)
+            ));
+        }
     };
 
-    const getHeatColor = (v: number) => {
-        if (v < 0.5) return 'rgba(0,230,118,0.3)';
-        if (v < 1) return 'rgba(255,215,64,0.4)';
-        if (v < 1.5) return 'rgba(255,152,0,0.5)';
-        if (v < 2) return 'rgba(255,82,82,0.6)';
-        return 'rgba(213,0,0,0.7)';
+    const fetchStationData = (station: any) => {
+        setLoading(true);
+        setSelected(null);
+        setTimeout(() => {
+            setSelected(station);
+            setLoading(false);
+        }, 1500);
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case '좋음': return '#00e676';
+            case '보통': return '#ffea00';
+            case '나쁨': return '#ff9100';
+            case '매우나쁨': return '#ff1744';
+            default: return '#fff';
+        }
     };
 
     return (
-        <div className="climate-sim">
-            <div className="climate-controls">
-                <h3 className="panel-title">지역 & 시간 설정</h3>
-                <div className="region-select">
-                    {regions.map((r, i) => (
-                        <button
-                            key={r.name}
-                            className={`region-btn ${region === i ? 'active' : ''}`}
-                            onClick={() => { setRegion(i); setResult(null); }}
-                        >
-                            <span>{r.emoji}</span>
-                            <span>{r.name}</span>
-                        </button>
-                    ))}
-                </div>
-                <div className="slider-group">
-                    <div className="slider-header">
-                        <span className="slider-label">예측 연도</span>
-                        <span className="slider-value">{year}년</span>
-                    </div>
-                    <input type="range" min={2005} max={2080} value={year}
-                        onChange={e => { setYear(parseInt(e.target.value)); setResult(null); }}
-                        className="slider"
-                    />
-                </div>
-                <button className="btn btn-primary run-btn" onClick={simulate} disabled={loading}>
-                    {loading ? '시뮬레이션 중...' : '🌍 기후 시뮬레이션 실행'}
-                </button>
+        <div className="sim-ui">
+            <div className="panel-header">
+                <h3>🏭 대기질 모니터링 허브</h3>
+                <p>관측소를 검색하고 클릭하여 초미세먼지, 오존 등 실시간 환경 데이터를 조회합니다.</p>
             </div>
 
-            {loading && (
-                <div className="loading-state">
-                    <div className="loader" />
-                    <p>기후 데이터를 분석 중입니다...</p>
-                </div>
-            )}
-
-            {result && !loading && (
-                <div className="climate-results">
-                    <div className="climate-stats">
-                        {[
-                            { label: '온도 변화', value: `+${result.tempChange.toFixed(1)}°C`, color: 'var(--accent-rose)' },
-                            { label: 'CO₂ 농도', value: `${result.co2Level.toFixed(0)} ppm`, color: 'var(--accent-amber)' },
-                            { label: '해수면 상승', value: `+${result.seaLevel.toFixed(1)} cm`, color: 'var(--accent-cyan)' },
-                            { label: '빙하 잔존율', value: `${result.iceArea.toFixed(1)}%`, color: 'var(--accent-emerald)' },
-                        ].map(s => (
-                            <div key={s.label} className="climate-stat-card">
-                                <span className="cs-label">{s.label}</span>
-                                <span className="cs-value" style={{ color: s.color }}>{s.value}</span>
-                            </div>
+            <div className="dashboard-layout">
+                {/* Left Panel: Search & List */}
+                <div className="side-panel glass-card">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="관측소명 또는 지역 검색..."
+                            value={search}
+                            onChange={e => handleSearch(e.target.value)}
+                        />
+                    </div>
+                    
+                    <div className="station-list">
+                        <div className="list-header">검색된 관측소 ({stations.length})</div>
+                        {stations.map(st => (
+                            <button
+                                key={st.id}
+                                className={`station-item ${selected?.id === st.id ? 'active' : ''}`}
+                                onClick={() => fetchStationData(st)}
+                            >
+                                <div className="st-info">
+                                    <strong>{st.name}</strong>
+                                    <span>#{st.id} · {st.region}</span>
+                                </div>
+                                <div className="st-badge" style={{ backgroundColor: getStatusColor(st.status) + '20', color: getStatusColor(st.status) }}>
+                                    {st.status}
+                                </div>
+                            </button>
                         ))}
-                    </div>
-
-                    {/* Heatmap */}
-                    <div className="heatmap-section">
-                        <h4>🗺️ 지역 온도 변화 히트맵</h4>
-                        <div className="heatmap-grid">
-                            {result.heatmap.map((row, ri) =>
-                                row.map((v, ci) => (
-                                    <div
-                                        key={`${ri}-${ci}`}
-                                        className="heatmap-cell"
-                                        style={{ background: getHeatColor(v) }}
-                                        title={`+${v.toFixed(2)}°C`}
-                                    />
-                                ))
-                            )}
-                        </div>
-                        <div className="heatmap-legend">
-                            <span>0°C</span>
-                            <div className="legend-gradient" />
-                            <span>+2°C+</span>
-                        </div>
-                    </div>
-
-                    {/* Trend Chart */}
-                    <div className="trend-section">
-                        <h4>📈 연도별 추이</h4>
-                        <div className="trend-chart">
-                            <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="trend-svg">
-                                <polyline fill="none" stroke="var(--accent-rose)" strokeWidth="2"
-                                    points={result.yearlyData.map((d, i) => `${(i / 9) * 380 + 10},${110 - (d.temp / 4) * 90}`).join(' ')}
-                                />
-                                <polyline fill="rgba(255,82,82,0.1)" stroke="none"
-                                    points={`10,110 ${result.yearlyData.map((d, i) => `${(i / 9) * 380 + 10},${110 - (d.temp / 4) * 90}`).join(' ')} 390,110`}
-                                />
-                                {result.yearlyData.map((d, i) => (
-                                    <circle key={i} cx={(i / 9) * 380 + 10} cy={110 - (d.temp / 4) * 90} r="3" fill="var(--accent-rose)" />
-                                ))}
-                            </svg>
-                        </div>
+                        {stations.length === 0 && <div className="empty-state">검색 결과가 없습니다.</div>}
                     </div>
                 </div>
-            )}
+
+                {/* Right Panel: Detail View */}
+                <div className="detail-panel glass-card">
+                    {!loading && !selected && (
+                        <div className="empty-detail">
+                            <div className="empty-icon">📍</div>
+                            <p>좌측 목록에서 관측소를 선택하시면<br/>상세 대기질 성분 데이터가 표시됩니다.</p>
+                        </div>
+                    )}
+
+                    {loading && (
+                        <div className="loading-detail">
+                            <div className="loader" />
+                            <p>실시간 관측소 데이터를 불러오고 있습니다...</p>
+                        </div>
+                    )}
+
+                    {selected && !loading && (
+                        <div className="station-detail">
+                            <div className="detail-header">
+                                <div>
+                                    <h2>{selected.name}</h2>
+                                    <p>{selected.region} · 관측소 ID: {selected.id} · <span style={{ color: 'var(--accent-cyan)' }}>실시간 연동 중 (Live)</span></p>
+                                </div>
+                                <div className="status-hero" style={{ borderColor: getStatusColor(selected.status), boxShadow: \`0 0 20px \${getStatusColor(selected.status)}30\` }}>
+                                    <span>종합대기</span>
+                                    <strong style={{ color: getStatusColor(selected.status) }}>{selected.status}</strong>
+                                </div>
+                            </div>
+                            
+                            <h4 className="section-title">측정 항목</h4>
+                            <div className="metrics-grid">
+                                <div className="metric-card">
+                                    <span>미세먼지 (PM10)</span>
+                                    <div className="val">
+                                        <strong>{selected.pm10}</strong> <small>㎍/㎥</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: \`\${Math.min(100, selected.pm10)}%\`, background: getStatusColor(selected.status) }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>초미세먼지 (PM2.5)</span>
+                                    <div className="val">
+                                        <strong>{selected.pm25}</strong> <small>㎍/㎥</small>
+                                    </div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: \`\${Math.min(100, selected.pm25 * 2)}%\`, background: getStatusColor(selected.status) }} /></div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>이산화질소 (NO₂)</span>
+                                    <div className="val">
+                                        <strong>{selected.no2}</strong> <small>ppm</small>
+                                    </div>
+                                </div>
+                                <div className="metric-card">
+                                    <span>오존 (O₃)</span>
+                                    <div className="val">
+                                        <strong>{selected.o3}</strong> <small>ppm</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="action-row">
+                                <button className="btn btn-secondary" onClick={() => alert('과거 이력 조회를 시작합니다.')}>📊 주간 이력 조회</button>
+                                <button className="btn btn-primary" onClick={() => alert('정책 시뮬레이션을 생성합니다.')}>🌍 환경 정책 AI 시뮬레이션</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <style jsx>{`
-        .climate-sim { display: flex; flex-direction: column; gap: var(--space-xl); }
-        .panel-title { font-size: 16px; font-weight: 700; margin-bottom: var(--space-md); }
-        .region-select { display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg); flex-wrap: wrap; }
-        .region-btn {
-          flex: 1; min-width: 100px;
-          padding: var(--space-md);
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-          display: flex; flex-direction: column; align-items: center; gap: 6px;
-          font-size: 13px; font-weight: 500;
-          cursor: pointer; transition: all var(--transition-fast);
-          font-family: inherit; color: inherit;
-        }
-        .region-btn:hover { border-color: var(--border-medium); }
-        .region-btn.active { border-color: var(--accent-emerald); background: var(--accent-emerald-dim); color: var(--accent-emerald); }
-        .region-btn span:first-child { font-size: 24px; }
-        .slider-group { margin-bottom: var(--space-md); }
-        .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .slider-label { font-size: 13px; font-weight: 500; }
-        .slider-value { font-size: 13px; font-weight: 700; font-family: var(--font-mono); color: var(--accent-cyan); }
-        .slider { width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: var(--bg-glass-strong); border-radius: 3px; outline: none; }
-        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-emerald); cursor: pointer; }
-        .run-btn { width: 100%; padding: 14px; }
+        .sim-ui { display: flex; flex-direction: column; gap: var(--space-xl); animation: fadeIn 0.5s; height: 100%; }
+        .panel-header h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--accent-emerald); }
+        .panel-header p { font-size: 14px; color: var(--text-secondary); }
+        
+        .dashboard-layout { display: flex; gap: var(--space-xl); min-height: 500px; }
+        
+        .side-panel { width: 350px; display: flex; flex-direction: column; padding: var(--space-md); border: 1px solid var(--border-medium); }
+        .search-box { position: relative; margin-bottom: var(--space-md); }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-tertiary); }
+        .search-box input { width: 100%; padding: 12px 14px 12px 40px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); color: #fff; font-size: 14px; transition: border 0.3s; }
+        .search-box input:focus { outline: none; border-color: var(--accent-emerald); }
+        
+        .station-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 8px; padding-right: 4px; }
+        .station-list::-webkit-scrollbar { width: 6px; }
+        .station-list::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+        .list-header { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; margin-bottom: 4px; }
+        
+        .station-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; text-align: left; }
+        .station-item:hover { background: rgba(255,255,255,0.08); border-color: var(--border-medium); }
+        .station-item.active { background: rgba(0,230,118,0.1); border-color: var(--accent-emerald); }
+        .st-info { display: flex; flex-direction: column; gap: 4px; }
+        .st-info strong { font-size: 14px; color: #fff; font-weight: 600; }
+        .st-info span { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-mono); }
+        .st-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-tertiary); font-size: 13px; }
 
-        .loading-state { text-align: center; padding: var(--space-2xl); }
-        .loader { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--accent-emerald); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto var(--space-md); }
+        .detail-panel { flex: 1; padding: var(--space-2xl); border: 1px solid var(--border-medium); display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
+        .empty-detail, .loading-detail { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary); }
+        .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+        .loader { width: 40px; height: 40px; border: 4px solid var(--border-subtle); border-top-color: var(--accent-emerald); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
-        .climate-results { animation: fadeInUp 0.5s ease-out; }
-        .climate-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
-        .climate-stat-card { background: var(--bg-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-md); text-align: center; }
-        .cs-label { display: block; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .cs-value { font-size: 20px; font-weight: 700; }
+        .station-detail { animation: fadeInUp 0.4s ease-out; display: flex; flex-direction: column; height: 100%; }
+        .detail-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-xl); margin-bottom: var(--space-xl); }
+        .detail-header h2 { font-size: 26px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+        .detail-header p { font-size: 14px; color: var(--text-secondary); font-family: var(--font-mono); }
+        .status-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100px; height: 100px; border: 2px solid; border-radius: 50%; background: #000; }
+        .status-hero span { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+        .status-hero strong { font-size: 20px; font-weight: 800; }
 
-        .heatmap-section { margin-bottom: var(--space-xl); }
-        .heatmap-section h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
-        .heatmap-grid {
-          display: grid;
-          grid-template-columns: repeat(12, 1fr);
-          gap: 2px;
-          padding: var(--space-md);
-          background: var(--bg-glass);
-          border: 1px solid var(--border-subtle);
-          border-radius: var(--radius-md);
-        }
-        .heatmap-cell { aspect-ratio: 1; border-radius: 2px; transition: all var(--transition-fast); }
-        .heatmap-cell:hover { transform: scale(1.3); z-index: 1; }
-        .heatmap-legend { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-sm); font-size: 11px; color: var(--text-tertiary); }
-        .legend-gradient { flex:1; height: 8px; border-radius: 4px; background: linear-gradient(to right, rgba(0,230,118,0.3), rgba(255,215,64,0.5), rgba(255,82,82,0.7), rgba(213,0,0,0.8)); }
+        .section-title { font-size: 16px; font-weight: 600; margin-bottom: var(--space-md); color: #fff; }
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: auto; }
+        .metric-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); padding: var(--space-xl); border-radius: var(--radius-md); }
+        .metric-card span { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+        .val { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+        .val strong { font-size: 32px; font-weight: 800; font-family: var(--font-mono); color: #fff; }
+        .val small { font-size: 14px; color: var(--text-tertiary); }
+        .bar-bg { width: 100%; height: 6px; background: var(--bg-glass-strong); border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
 
-        .trend-section h4 { font-size: 14px; font-weight: 600; margin-bottom: var(--space-md); }
-        .trend-chart { background: var(--bg-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-md); height: 160px; }
-        .trend-svg { width: 100%; height: 100%; }
-
-        @media (max-width: 640px) { .climate-stats { grid-template-columns: repeat(2, 1fr); } }
+        .action-row { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-2xl); padding-top: var(--space-xl); border-top: 1px solid var(--border-subtle); }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        @media (max-width: 900px) { .dashboard-layout { flex-direction: column; } .side-panel { width: 100%; max-height: 400px; } .metrics-grid { grid-template-columns: 1fr; } }
       `}</style>
-        </div>
+        </div >
     );
 }

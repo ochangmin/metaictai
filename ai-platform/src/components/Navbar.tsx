@@ -42,7 +42,7 @@ export default function Navbar() {
               </g>
             </svg>
           </div>
-          <span className="brand-text">Meta<span className="brand-ai">ICT</span></span>
+          <span className="brand-text">Meta R&D</span>
         </Link>
 
         <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
@@ -112,13 +112,10 @@ export default function Navbar() {
           align-items: center;
         }
         .brand-text {
-          font-size: 20px;
+          font-size: 22px;
           font-weight: 800;
           letter-spacing: -0.5px;
-          color: #7e3ba6;
-        }
-        .brand-ai {
-          background: linear-gradient(90deg, #448aff, #2979ff);
+          background: linear-gradient(90deg, #7e3ba6, #df3a7a, #eda344);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
