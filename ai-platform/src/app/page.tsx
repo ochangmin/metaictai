@@ -24,10 +24,32 @@ export default function HomePage() {
             <span>R&D AI Platform — Now Live</span>
           </div>
 
-          <h1 className="hero-title">
-            차세대 연구를 위한<br />
-            <span className="text-gradient">데이터 기반 R&D 중심</span>
-          </h1>
+          <div className="hero-logo-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', marginBottom: '16px' }}>
+            <svg width="84" height="84" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="hero-brand-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#7e3ba6" />
+                  <stop offset="50%" stopColor="#df3a7a" />
+                  <stop offset="100%" stopColor="#eda344" />
+                </linearGradient>
+              </defs>
+              <g stroke="url(#hero-brand-grad)" strokeWidth="6" strokeLinejoin="round" strokeLinecap="round">
+                <polygon points="50,10 84.64,30 84.64,70 50,90 15.36,70 15.36,30" />
+                <line x1="50" y1="50" x2="84.64" y2="30" />
+                <line x1="50" y1="50" x2="50" y2="90" />
+                <line x1="50" y1="50" x2="15.36" y2="30" />
+                <polygon points="50,20 67.32,30 50,40 32.68,30" />
+                <polygon points="75.98,45 75.98,65 58.66,75 58.66,55" />
+                <polygon points="24.02,45 41.34,55 41.34,75 24.02,65" />
+              </g>
+            </svg>
+            <h1 style={{ fontSize: '84px', fontWeight: '900', letterSpacing: '-3px', margin: 0, background: 'linear-gradient(90deg, #7e3ba6, #df3a7a, #eda344)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              Meta R&D
+            </h1>
+          </div>
+          <h2 className="hero-subtitle">
+            차세대 연구를 위한 실시간 데이터 중심 플랫폼
+          </h2>
 
           <p className="hero-desc">
             50개 기초과학 시뮬레이터와 10개 데이터 기반 R&D 플랫폼으로<br />
@@ -253,11 +275,10 @@ export default function HomePage() {
           background: var(--accent-cyan);
           animation: pulse-glow 2s ease-in-out infinite;
         }
-        .hero-title {
-          font-size: clamp(36px, 6vw, 72px);
-          font-weight: 900;
-          letter-spacing: -2px;
-          line-height: 1.1;
+        .hero-subtitle {
+          font-size: clamp(20px, 3vw, 32px);
+          font-weight: 700;
+          color: var(--text-primary);
           margin-bottom: var(--space-lg);
         }
         .hero-desc {
