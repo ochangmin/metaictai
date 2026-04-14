@@ -1,0 +1,239 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meta ICT | AI Innovation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Fira+Code:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #050505;
+      overflow-x: hidden;
+      color: white;
+      animation: nebula-pulse 15s ease-in-out infinite;
+    }
+    
+    @keyframes nebula-pulse {
+      0%, 100% { background-color: #050505; }
+      50% { background-color: #0a0510; }
+    }
+
+    .font-mono {
+      font-family: 'Fira Code', monospace;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 1s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes floating {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+      100% { transform: translateY(0px); }
+    }
+    .animate-floating {
+      animation: floating 3s ease-in-out infinite;
+    }
+
+    @keyframes logo-breath {
+      0%, 100% {
+        background-position: 0% 50%;
+        filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.1));
+      }
+      50% {
+        background-position: 100% 50%;
+        filter: drop-shadow(0 0 15px rgba(234, 88, 12, 0.4));
+      }
+    }
+    
+    @keyframes partner-flow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes tech-border-flow {
+      0% { border-color: rgba(234, 88, 12, 0.2); box-shadow: 0 0 5px rgba(234, 88, 12, 0.1); }
+      33% { border-color: rgba(14, 165, 233, 0.4); box-shadow: 0 0 15px rgba(14, 165, 233, 0.2); }
+      66% { border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 0 15px rgba(168, 85, 247, 0.2); }
+      100% { border-color: rgba(234, 88, 12, 0.2); box-shadow: 0 0 5px rgba(234, 88, 12, 0.1); }
+    }
+
+    .animate-tech-border {
+      animation: tech-border-flow 6s linear infinite;
+    }
+
+    .animate-logo-breath {
+      background: linear-gradient(90deg, #ea580c, #fb923c, #ffffff, #fb923c, #ea580c);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: logo-breath 5s ease-in-out infinite;
+    }
+
+    /* 모바일 메뉴 전용 애니메이션 */
+    @keyframes mobile-menu-item-appear {
+      from { 
+        opacity: 0; 
+        transform: translateY(40px) scale(0.95);
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .animate-mobile-menu-item {
+      animation: mobile-menu-item-appear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* 무지개 그라데이션 흐름 애니메이션 */
+    @keyframes rainbow-flow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    .animate-rainbow-flow {
+      background: linear-gradient(
+        90deg, 
+        #ff0000, #ff8000, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000
+      );
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: rainbow-flow 5s linear infinite;
+    }
+
+    .text-cosmic {
+      color: #fff;
+      background: url('https://images.unsplash.com/photo-1614728263952-84ea256f9679?auto=format&fit=crop&w=1000&q=80');
+      background-size: 200% auto;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: space-flow 15s linear infinite;
+    }
+
+    @keyframes space-flow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee {
+      display: flex;
+      width: max-content;
+      animation: marquee 40s linear infinite;
+    }
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+
+    .star-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #root {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+    }
+
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      filter: drop-shadow(0 0 5px white);
+    }
+
+    .star-slow { animation: move-stars-slow var(--duration) linear infinite; }
+    .star-fast { animation: move-stars-fast var(--duration) linear infinite; }
+
+    @keyframes move-stars-slow {
+      from { transform: translateY(0); }
+      to { transform: translateY(-1000px); }
+    }
+    @keyframes move-stars-fast {
+      from { transform: translateY(0) translateX(0); }
+      to { transform: translateY(-1000px) translateX(-200px); }
+    }
+
+    .sun-glow {
+      position: fixed;
+      top: 20%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255, 140, 0, 0.1) 0%, rgba(255, 69, 0, 0.02) 40%, transparent 70%);
+      filter: blur(80px);
+      z-index: -1;
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #050505; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@^19.2.3",
+      "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+      "react/": "https://esm.sh/react@^19.2.3/",
+      "@google/genai": "https://esm.sh/@google/genai@^1.38.0"
+    }
+  }
+  </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div class="sun-glow"></div>
+  <div id="stars-container" class="star-layer"></div>
+  <div id="root"></div>
+
+  <script>
+    const container = document.getElementById('stars-container');
+    const createStars = (count, className, durationRange) => {
+      for (let i = 0; i < count; i++) {
+        const star = document.createElement('div');
+        star.className = `star ${className}`;
+        const size = Math.random() * 2 + 1 + 'px';
+        star.style.width = size;
+        star.style.height = size;
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        const duration = (Math.random() * durationRange[1] + durationRange[0]) + 's';
+        star.style.setProperty('--duration', duration);
+        star.style.opacity = Math.random();
+        container.appendChild(star);
+      }
+    }
+    createStars(100, 'star-slow', [60, 120]);
+    createStars(50, 'star-fast', [30, 60]);
+  </script>
+  <script type="module" src="index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
