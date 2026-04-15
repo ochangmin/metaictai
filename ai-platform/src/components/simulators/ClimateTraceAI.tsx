@@ -66,7 +66,7 @@ export default function ClimateTraceAI() {
                             onChange={e => handleSearch(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="station-list">
                         <div className="list-header">검색된 관측소 ({stations.length})</div>
                         {stations.map(st => (
@@ -93,7 +93,7 @@ export default function ClimateTraceAI() {
                     {!loading && !selected && (
                         <div className="empty-detail">
                             <div className="empty-icon">📍</div>
-                            <p>좌측 목록에서 관측소를 선택하시면<br/>상세 대기질 성분 데이터가 표시됩니다.</p>
+                            <p>좌측 목록에서 관측소를 선택하시면<br />상세 대기질 성분 데이터가 표시됩니다.</p>
                         </div>
                     )}
 
@@ -111,12 +111,12 @@ export default function ClimateTraceAI() {
                                     <h2>{selected.name}</h2>
                                     <p>{selected.region} · 관측소 ID: {selected.id} · <span style={{ color: 'var(--accent-cyan)' }}>실시간 연동 중 (Live)</span></p>
                                 </div>
-                                <div className="status-hero" style={{ borderColor: getStatusColor(selected.status), boxShadow: \`0 0 20px \${getStatusColor(selected.status)}30\` }}>
+                                <div className="status-hero" style={{ borderColor: getStatusColor(selected.status), boxShadow: `0 0 20px ${getStatusColor(selected.status)}30` }}>
                                     <span>종합대기</span>
                                     <strong style={{ color: getStatusColor(selected.status) }}>{selected.status}</strong>
                                 </div>
                             </div>
-                            
+
                             <h4 className="section-title">측정 항목</h4>
                             <div className="metrics-grid">
                                 <div className="metric-card">
@@ -124,14 +124,14 @@ export default function ClimateTraceAI() {
                                     <div className="val">
                                         <strong>{selected.pm10}</strong> <small>㎍/㎥</small>
                                     </div>
-                                    <div className="bar-bg"><div className="bar-fill" style={{ width: \`\${Math.min(100, selected.pm10)}%\`, background: getStatusColor(selected.status) }} /></div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${Math.min(100, selected.pm10)}%`, background: getStatusColor(selected.status) }} /></div>
                                 </div>
                                 <div className="metric-card">
                                     <span>초미세먼지 (PM2.5)</span>
                                     <div className="val">
                                         <strong>{selected.pm25}</strong> <small>㎍/㎥</small>
                                     </div>
-                                    <div className="bar-bg"><div className="bar-fill" style={{ width: \`\${Math.min(100, selected.pm25 * 2)}%\`, background: getStatusColor(selected.status) }} /></div>
+                                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${Math.min(100, selected.pm25 * 2)}%`, background: getStatusColor(selected.status) }} /></div>
                                 </div>
                                 <div className="metric-card">
                                     <span>이산화질소 (NO₂)</span>
